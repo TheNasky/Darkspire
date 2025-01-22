@@ -145,14 +145,6 @@ export default function MainMenu() {
         onSelect={handleCharacterSelect}
         selectedCharacter={null}
       />
-      <input
-        type="range"
-        min="0"
-        max="1"
-        step="0.1"
-        value={volume}
-        onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-      />
     </>
   );
 }

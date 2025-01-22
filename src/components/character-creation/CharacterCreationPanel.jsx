@@ -22,7 +22,7 @@ const COLOR_OPTIONS = {
 
 const ColorPicker = ({ category, colors, selectedScheme, onSelect, mobile }) => {
   const [page, setPage] = useState(0);
-  const colorsPerPage = window.innerWidth >= 1024 ? 16 : 12;
+  const colorsPerPage = window.innerWidth >= 1024 ? 16 : 10;
   const totalPages = Math.ceil(colors.length / colorsPerPage);
   const currentColors = colors.slice(page * colorsPerPage, (page + 1) * colorsPerPage);
 
@@ -71,7 +71,7 @@ const ColorPicker = ({ category, colors, selectedScheme, onSelect, mobile }) => 
           </div>
         )}
       </div>
-      <div className="grid grid-cols-6 lg:grid-cols-8 gap-1 lg:gap-1.5" style={{ minHeight }}>
+      <div className="grid grid-cols-5 lg:grid-cols-8 gap-1 lg:gap-1.5" style={{ minHeight }}>
         {currentColors.map(({ value, scheme }) => (
           <ColorOption
             key={value}
@@ -88,7 +88,7 @@ const ColorPicker = ({ category, colors, selectedScheme, onSelect, mobile }) => 
 const ColorOption = ({ color, selected, onClick }) => (
   <button
     onClick={onClick}
-    className={`w-4 h-4 lg:w-8 lg:h-8 rounded-[0.25rem] lg:rounded-lg transition-all duration-200 border-[0.15rem] hover:scale-110
+    className={`w-6 h-6 lg:w-8 lg:h-8 rounded-[0.25rem] lg:rounded-lg transition-all duration-200 border-[0.15rem] hover:scale-110
       ${
         selected
           ? "border-[#2A160C] shadow-lg scale-110"
@@ -232,6 +232,17 @@ export default function CharacterCreationPanel({ selectedClass, setSelectedClass
                 transition={{ duration: 0.2 }}
                 className="grid grid-cols-4 lg:grid-cols-6 gap-1.5 lg:gap-3 bg-[#E6D5BC] border border-[#2A160C]/20 rounded-lg lg:rounded-xl p-2 lg:p-4"
                 // style={{ minHeight: minGridHeight }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.2}
+                onDragEnd={(e, { offset, velocity }) => {
+                  const swipe = Math.abs(velocity.x) * offset.x;
+                  if (swipe < -1000 && currentPage < totalPages - 1) {
+                    handlePageChange("next");
+                  } else if (swipe > 1000 && currentPage > 0) {
+                    handlePageChange("prev");
+                  }
+                }}
               >
                 {currentClasses.map((characterClass) => (
                   <button
@@ -258,13 +269,14 @@ export default function CharacterCreationPanel({ selectedClass, setSelectedClass
                         <CharacterSprite
                           characterId={characterClass.id}
                           action="idle"
-                          size="20rem"
+                          size="19rem"
                           colorMap={
                             selectedClass.id === characterClass.id ||
                             hoveredButtonId === characterClass.id
-                              ? {}
+                              ? getColorMap()
                               : undefined
                           }
+                          isDisabled={selectedClass.id !== characterClass.id && hoveredButtonId !== characterClass.id}
                         />
                       </div>
                     </div>

@@ -10,7 +10,8 @@ export default function CharacterSprite({
   action = "idle", 
   size = "32px", 
   scale = 1, 
-  colorMap = {} 
+  colorMap = {},
+  isDisabled = false
 }) {
   const [currentFrame, setCurrentFrame] = useState(0);
   const animationRef = useRef(null);
@@ -106,6 +107,8 @@ export default function CharacterSprite({
   };
 
   const animate = () => {
+    if (isDisabled) return;
+
     const character = getClassById(characterId);
     if (!character?.spritesheet?.animations[action]) return;
 
@@ -122,11 +125,16 @@ export default function CharacterSprite({
     const character = getClassById(characterId);
     if (!character?.spritesheet?.animations[action]) return;
 
+    if (isDisabled) {
+      setCurrentFrame(0);
+      return;
+    }
+
     const frameRate = character.spritesheet.animations[action].frameRate;
     const intervalId = setInterval(animate, 1000 / frameRate);
 
     return () => clearInterval(intervalId);
-  }, [characterId, action]);
+  }, [characterId, action, isDisabled]);
 
   if (debug.loading) return <div className="text-white">Loading sprites...</div>;
   if (debug.error) return <div className="text-red-500">Error: {debug.error}</div>;

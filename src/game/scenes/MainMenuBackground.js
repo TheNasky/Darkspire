@@ -28,7 +28,7 @@ export default class MainMenuBackground extends Phaser.Scene {
   }
 
   create() {
-    const scaleY = this.cameras.main.height; // Assuming original image height is 270px
+    const scaleY = this.cameras.main.height;
     const displayWidth = this.cameras.main.width;
     
     const layers = [
@@ -44,8 +44,8 @@ export default class MainMenuBackground extends Phaser.Scene {
       const sprite = this.add.tileSprite(
         0,
         0,
-        240, // Original image width
-        240, // Original image height
+        240,
+        240,
         key
       )
         .setOrigin(0, 0)
@@ -58,18 +58,29 @@ export default class MainMenuBackground extends Phaser.Scene {
 
     // Handle window resize
     const resize = () => {
-      const newScaleY = this.cameras.main.height;
-      const newWidth = this.cameras.main.width;
+      const newHeight = window.innerHeight;
+      const newWidth = window.innerWidth;
       
+      // Update game scale
+      this.scale.resize(newWidth, newHeight);
+      
+      // Update each layer
       this.parallaxLayers.forEach(({ sprite }) => {
+        const newScaleY = newHeight / 240;
         sprite.setScale(newScaleY)
-          .setDisplaySize(newWidth, this.cameras.main.height);
+          .setDisplaySize(newWidth, newHeight);
+        sprite.x = 0;
+        sprite.y = 0;
       });
     };
 
+    // Listen for both resize and fullscreenchange events
     window.addEventListener('resize', resize);
+    window.addEventListener('fullscreenchange', resize);
+    
     this.events.on('shutdown', () => {
       window.removeEventListener('resize', resize);
+      window.removeEventListener('fullscreenchange', resize);
     });
   }
 

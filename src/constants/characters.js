@@ -2,7 +2,7 @@ export const CHARACTER_CLASSES = [
   {
     id: "wizard",
     name: "Wizard",
-    description: "A powerful spellcaster who excels at area damage and buffs, unleashing devastating spells and empowering allies.",
+    description: "A powerful spellcaster who excels at area damage and buffs, unleashing devastating spells to eliminate threats and empower allies.",
     unlocked: true,
     spritesheet: {
       path: "/assets/characters/Wizard/Wizard.png",
@@ -57,136 +57,89 @@ export const CHARACTER_CLASSES = [
       }
     }
   },
-  // {
-  //   id: "cleric",
-  //   name: "Cleric",
-  //   description: "Divine healer and protector",
-  //   unlocked: true,
-  //   spriteInfo: {
-  //     idle: {
-  //       path: "/assets/characters/Cleric/idle",
-  //       frameCount: 4,
-  //       frameRate: 4,
-  //     },
-  //   },
-  // },
-  // {
-  //   id: "duelist",
-  //   name: "Duelist",
-  //   description: "Swift blade master",
-  //   unlocked: true,
-  //   spriteInfo: {
-  //     idle: {
-  //       path: "/assets/characters/Duelist/idle",
-  //       frameCount: 4,
-  //       frameRate: 4,
-  //     },
-  //   },
-  // },
-  // {
-  //   id: "archer",
-  //   name: "Archer",
-  //   description: "Master of the bow",
-  //   unlocked: true,
-  //   spriteInfo: {
-  //     idle: {
-  //       path: "/assets/characters/Archer/idle",
-  //       frameCount: 4,
-  //       frameRate: 4,
-  //     },
-  //   },
-  // },
   {
-    id: "spearman",
-    name: "Spearman",
-    description: "A tactical fighter who excels at zone control, using precise positioning and sweeping attacks to keep enemies at bay.",
+    id: "cleric",
+    name: "Cleric",
+    description: "A divine healer and protector, skilled in restoring health and shielding allies from harm while wielding holy magic.",
     unlocked: true,
     spritesheet: {
-      path: "/assets/characters/Spearman/Spearman.png",
+      path: "/assets/characters/Cleric/Cleric.png",
       frameWidth: 32,
       frameHeight: 32,
       animations: {
         idle: {
           row: 0,
           frameCount: 4,
-          frameRate: 4,
+          frameRate: 4
         },
-        // Add other animations if needed
+        walk: {
+          row: 1,
+          frameCount: 6,
+          frameRate: 6
+        },
+        cast: {
+          row: 2,
+          frameCount: 5,
+          frameRate: 5
+        },
+        hit: {
+          row: 3,
+          frameCount: 2,
+          frameRate: 2
+        },
+        death: {
+          row: 4,
+          frameCount: 6,
+          frameRate: 4
+        }
       },
       baseColors: {
-        clothes: ["6098e8", "4058c0"],
+        clothes: ["f0e68c", "d1c67a"],
+        hair: ["c2b280", "a89f7d"],
+        skin: ["f8c090", "e0b48d"]
+      }
+    }
+  },
+  {
+    id: "duelist",
+    name: "Duelist",
+    description: "A swift blade master who excels in agility and precision, outmaneuvering opponents with feints and critical strikes.",
+    unlocked: true,
+    spritesheet: {
+      path: "/assets/characters/Duelist/Duelist.png",
+      frameWidth: 32,
+      frameHeight: 32,
+      animations: {
+        idle: {
+          row: 0,
+          frameCount: 4,
+          frameRate: 4
+        },
+        walk: {
+          row: 1,
+          frameCount: 6,
+          frameRate: 6
+        },
+        attack: {
+          row: 2,
+          frameCount: 8,
+          frameRate: 5
+        },
+        hit: {
+          row: 3,
+          frameCount: 2,
+          frameRate: 2
+        },
+        death: {
+          row: 4,
+          frameCount: 6,
+          frameRate: 4
+        }
+      },
+      baseColors: {
+        clothes: ["c0c0c0", "a0a0a0"],
         hair: ["4e4b49", "3e3b39"],
-        skin: ["f8c090", "c88850"]
-      }
-    }
-  },
-  {
-    id: "knight",
-    name: "Knight",
-    description: "A heavily armored defender who mitigates damage while protecting allies and punishing aggressive foes.",
-    unlocked: true,
-    spritesheet: {
-      path: "/assets/characters/Knight/Knight.png",
-      frameWidth: 32,
-      frameHeight: 32,
-      animations: {
-        idle: {
-          row: 0,
-          frameCount: 4,
-          frameRate: 4,
-        },
-        // Add other animations if needed
-      },
-      baseColors: {
-        clothes: ["6098e8", "4058c0"],
-        skin: ["f8c090", "c88850"]
-      }
-    }
-  },
-  {
-    id: "spearman",
-    name: "Spearman",
-    description: "A tactical fighter who excels at zone control, using precise positioning and sweeping attacks to keep enemies at bay.",
-    unlocked: true,
-    spritesheet: {
-      path: "/assets/characters/Spearman/Spearman.png",
-      frameWidth: 32,
-      frameHeight: 32,
-      animations: {
-        idle: {
-          row: 0,
-          frameCount: 4,
-          frameRate: 4,
-        },
-        // Add other animations if needed
-      },
-      baseColors: {
-        clothes: ["6098e8", "4058c0"],
-        hair: ["4e4b49", "3e3b39"],
-        skin: ["f8c090", "c88850"]
-      }
-    }
-  },
-  {
-    id: "knight",
-    name: "Knight",
-    description: "A heavily armored defender who mitigates damage while protecting allies and punishing aggressive foes.",
-    unlocked: true,
-    spritesheet: {
-      path: "/assets/characters/Knight/Knight.png",
-      frameWidth: 32,
-      frameHeight: 32,
-      animations: {
-        idle: {
-          row: 0,
-          frameCount: 4,
-          frameRate: 4,
-        },
-        // Add other animations if needed
-      },
-      baseColors: {
-        clothes: ["6098e8", "4058c0"],
-        skin: ["f8c090", "c88850"]
+        skin: ["f8c090", "d8b48d"]
       }
     }
   },
@@ -217,7 +170,7 @@ export const CHARACTER_CLASSES = [
   {
     id: "knight",
     name: "Knight",
-    description: "A heavily armored defender who mitigates damage while protecting allies and punishing aggressive foes.",
+    description: "A heavily armored defender who mitigates damage while protecting allies and punishing aggressive foes with counterattacks.",
     unlocked: true,
     spritesheet: {
       path: "/assets/characters/Knight/Knight.png",
@@ -234,6 +187,92 @@ export const CHARACTER_CLASSES = [
       baseColors: {
         clothes: ["6098e8", "4058c0"],
         skin: ["f8c090", "c88850"]
+      }
+    }
+  },
+  {
+    id: "ranger",
+    name: "Ranger",
+    description: "A versatile hunter skilled in tracking and survival, adept at ranged combat and setting traps to control the battlefield.",
+    unlocked: true,
+    spritesheet: {
+      path: "/assets/characters/Ranger/Ranger.png",
+      frameWidth: 32,
+      frameHeight: 32,
+      animations: {
+        idle: {
+          row: 0,
+          frameCount: 4,
+          frameRate: 4
+        },
+        walk: {
+          row: 1,
+          frameCount: 6,
+          frameRate: 6
+        },
+        shoot: {
+          row: 2,
+          frameCount: 7,
+          frameRate: 5
+        },
+        hit: {
+          row: 3,
+          frameCount: 2,
+          frameRate: 2
+        },
+        death: {
+          row: 4,
+          frameCount: 6,
+          frameRate: 4
+        }
+      },
+      baseColors: {
+        clothes: ["4b8b3b", "3e6b2e"],
+        hair: ["4e4b49", "3e3b39"],
+        skin: ["f8c090", "d8b48d"]
+      }
+    }
+  },
+  {
+    id: "lumberjack",
+    name: "Lumberjack",
+    description: "A rugged woodsman who wields an axe with great strength, capable of dealing heavy damage and clearing paths through obstacles.",
+    unlocked: true,
+    spritesheet: {
+      path: "/assets/characters/Lumberjack/Lumberjack.png",
+      frameWidth: 32,
+      frameHeight: 32,
+      animations: {
+        idle: {
+          row: 0,
+          frameCount: 4,
+          frameRate: 4
+        },
+        walk: {
+          row: 1,
+          frameCount: 6,
+          frameRate: 6
+        },
+        attack: {
+          row: 2,
+          frameCount: 8,
+          frameRate: 5
+        },
+        hit: {
+          row: 3,
+          frameCount: 2,
+          frameRate: 2
+        },
+        death: {
+          row: 4,
+          frameCount: 6,
+          frameRate: 4
+        }
+      },
+      baseColors: {
+        clothes: ["a0522d", "8b4513"],
+        hair: ["4e4b49", "3e3b39"],
+        skin: ["f8c090", "d8b48d"]
       }
     }
   },
