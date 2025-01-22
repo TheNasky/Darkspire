@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import CharacterSprite from "../CharacterSprite";
 import { CHARACTER_CLASSES } from "../../constants/characters";
@@ -6,28 +6,49 @@ import { CHARACTER_COLORS } from "../../constants/characterColors";
 
 // Convert our color configurations to the format needed for the color picker
 const COLOR_OPTIONS = {
-  hair: Object.entries(CHARACTER_COLORS.hair).map(([key, colors]) => ({
-    value: `#${colors[0]}`,
-    scheme: key,
-  })),
-  skin: Object.entries(CHARACTER_COLORS.skin).map(([key, colors]) => ({
-    value: `#${colors[0]}`,
-    scheme: key,
-  })),
-  clothes: Object.entries(CHARACTER_COLORS.clothes).map(([key, colors]) => ({
-    value: `#${colors[0]}`,
-    scheme: key,
-  })),
+  hair: [
+    { value: "#4e4b49", scheme: "default" }, // Default hair color first
+    ...Object.entries(CHARACTER_COLORS.hair).map(([key, colors]) => ({
+      value: `#${colors[0]}`,
+      scheme: key,
+    })),
+  ],
+  skin: [
+    { value: "#f8c090", scheme: "default" }, // Default skin color first
+    ...Object.entries(CHARACTER_COLORS.skin).map(([key, colors]) => ({
+      value: `#${colors[0]}`,
+      scheme: key,
+    })),
+  ],
+  clothes: [
+    { value: "#6098e8", scheme: "default" }, // Default clothes color first
+    ...Object.entries(CHARACTER_COLORS.clothes).map(([key, colors]) => ({
+      value: `#${colors[0]}`,
+      scheme: key,
+    })),
+  ],
 };
 
 const ColorPicker = ({ category, colors, selectedScheme, onSelect, mobile }) => {
   const [page, setPage] = useState(0);
   const colorsPerPage = window.innerWidth >= 1024 ? 16 : 10;
+  
+  // Reset page when colors change
+  useEffect(() => {
+    setPage(0);
+  }, [colors.length]);
+
+  // Calculate total pages based on the original colors array
   const totalPages = Math.ceil(colors.length / colorsPerPage);
-  const currentColors = colors.slice(page * colorsPerPage, (page + 1) * colorsPerPage);
+  
+  // Get current page colors without any reordering
+  const currentColors = [...colors].slice(
+    page * colorsPerPage,
+    (page + 1) * colorsPerPage
+  );
 
   // Calculate minimum height based on two rows of color options
-  const colorSize = mobile ? "1.25rem" : "1.5rem"; // w-5/h-5 for mobile, w-6/h-6 for desktop
+  const colorSize = mobile ? "2rem" : "2.1rem"; // w-5/h-5 for mobile, w-6/h-6 for desktop
   const gap = "0.25rem"; // gap-1
   const minHeight = `calc((${colorSize} * 2) + ${gap})`;
 
@@ -71,10 +92,13 @@ const ColorPicker = ({ category, colors, selectedScheme, onSelect, mobile }) => 
           </div>
         )}
       </div>
-      <div className="grid grid-cols-5 lg:grid-cols-8 gap-1 lg:gap-1.5" style={{ minHeight }}>
+      <div 
+        className="grid grid-cols-5 lg:grid-cols-8 gap-1 lg:gap-1.5" 
+        style={{ minHeight }}
+      >
         {currentColors.map(({ value, scheme }) => (
           <ColorOption
-            key={value}
+            key={`${scheme}-${value}`}
             color={value}
             selected={scheme === selectedScheme}
             onClick={() => onSelect(category, scheme)}

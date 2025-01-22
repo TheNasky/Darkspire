@@ -1,6 +1,5 @@
 export const CHARACTER_COLORS = {
   skin: {
-    default: ["f8c090", "c88850"], // Original
     pale: ["ffe4d4", "eecebf"], // Very light, pink undertone
     fair: ["ffe0bd", "ecc5a1"], // Light, neutral undertone
     light: ["ffd5b3", "e6b592"], // Light medium, warm undertone
@@ -16,62 +15,70 @@ export const CHARACTER_COLORS = {
   },
 
   clothes: {
+
     // Reds
-    red: ["ff5555", "cc2929"], // Pure red
-    burgundy: ["800020", "600018"], // Deep red
-    pinkPastel: ["ffb6c1", "cc919a"], // Pastel pink
-    BrightPink: ["ff6699", "cc3366"], // Bright pink
+    red: ["ff5555", "cc2929"],        // Pure red
+    deepRed: ["cc0000", "990000"],    // Dark red (from newCollection2)
+    burgundy: ["800020", "600018"],    // Deep red
 
     // Oranges
-    orange: ["ff8c00", "cc7000"], // Pure orange
-    orangePastel: ["ffb347", "cc8f39"], // Pastel orange
-    BrightOrange: ["ff9933", "cc6633"], // Bright orange
-    rust: ["b7410e", "8a310b"], // Deep orange
+    orange: ["ff8c00", "cc7000"],     // Pure orange
+    brightOrange: ["ff9933", "cc6633"], // Bright orange (from newCollection1)
+    deepOrange: ["ff6600", "cc3300"],  // Dark orange (from newCollection2)
+    rust: ["b7410e", "8a310b"],       // Deep orange
 
     // Yellows
-    yellow: ["ffd700", "daa520"], // Pure yellow
+    brightYellow: ["ffcc00", "cc9900"], // Bright yellow (from newCollection1)
+    deepYellow: ["cccc00", "999900"],  // Dark yellow (from newCollection2)
+    yellow: ["ffd700", "daa520"],      // Pure yellow
     yellowPastel: ["fff68f", "ccc572"], // Pastel yellow
-    BrightYellow: ["ffcc00", "cc9900"], // Bright yellow
+    brightGold: ["ffcc66", "cc9966"],  // Bright gold (from newCollection1)
 
     // Greens
-    green: ["50c878", "2e8b57"], // Pure green
+    brightGreen: ["99ff99", "66cc66"], // Bright green (from newCollection1)
+    deepGreen: ["00cc00", "009900"],   // Dark green (from newCollection2)
+    green: ["50c878", "2e8b57"],      // Pure green
     greenPastel: ["98fb98", "79c979"], // Pastel green
-    BrightGreen: ["99ff99", "66cc66"], // Bright green
-    forest: ["228b22", "1a691a"], // Deep green
+    forest: ["228b22", "1a691a"],      // Deep green
 
     // Cyans/Teals
-    cyan: ["00cccc", "009999"], // Pure cyan
-    cyanPastel: ["afeeee", "8cbebe"], // Pastel cyan
-    teal: ["008080", "006060"], // Deep cyan
+    deepCyan: ["00cccc", "009999"],    // Dark cyan (from newCollection2)
+    cyan: ["00cccc", "009999"],       // Pure cyan
+    cyanPastel: ["afeeee", "8cbebe"],  // Pastel cyan
+    teal: ["008080", "006060"],        // Deep cyan
 
     // Blues
-    default: ["6098e8", "4058c0"], // Original blue
-    blue: ["4287f5", "2561d9"], // Pure blue
+    brightSkyBlue: ["66ccff", "3399cc"], // Bright sky blue (from newCollection1)
+    brightBlue: ["6699ff", "3366cc"],   // Bright blue (from newCollection1)
+    deepBlue: ["0000cc", "000099"],    // Dark blue (from newCollection2)
+    blue: ["4287f5", "2561d9"],       // Pure blue
     bluePastel: ["b0e2ff", "8eb4cc"], // Pastel blue
-    BrightSkyBlue: ["66ccff", "3399cc"], // Bright sky blue
-    BrightBlue: ["6699ff", "3366cc"], // Bright blue
-    navy: ["000080", "000060"], // Deep blue
+    navy: ["000080", "000060"],        // Deep blue
 
     // Purples/Magentas
-    purple: ["9b30ff", "7722cc"], // Pure purple
+    deepPurple: ["cc00cc", "990099"],   // Dark purple (from newCollection2)
+    purple: ["9b30ff", "7722cc"],     // Pure purple
     purplePastel: ["dda0dd", "b180b1"], // Pastel purple
-    BrightLavender: ["ffccff", "cc99cc"], // Bright lavender
-    royal: ["4b0082", "380061"], // Deep purple
-    magenta: ["ff69b4", "cc5499"], // Pure magenta
-    plum: ["8b008b", "680068"], // Deep magenta
+    royal: ["4b0082", "380061"],       // Deep purple
+    magenta: ["ff69b4", "cc5499"],    // Pure magenta
+    plum: ["8b008b", "680068"],        // Deep magenta
+    brightPink: ["ff6699", "cc3366"],  // Bright pink (from newCollection1)
+    hotPink: ["ff3399", "cc0066"],    // Dark pink (from newCollection2)
+    pinkPastel: ["ffb6c1", "cc919a"], // Pastel pink
+    brightLavender: ["ffccff", "cc99cc"], // Bright lavender (from newCollection1)
     lavenderPastel: ["e6e6fa", "b8b8c8"], // Pastel lavender
 
-    charcoal: ["404040", "303030"], // Soft black
+    white: ["ffffff", "e6e6e6"], // White/Gray
+    lightGray: ["e6e6e6", "c2c2c2"], // Light gray
+    ash: ["c2c2c2", "a6a6a6"], // Ash gray
+    darkGray: ["a6a6a6", "8a8a8a"], // Dark gray
+    blackGray: ["8a8a8a", "666666"], // Black gray  
+    veryDarkBlackGray: ["666666", "4d4d4d"], // Very dark black gray
+    charcoal: ["383838", "313131"], // Soft black
 
-    // Golds
-    BrightGold: ["ffcc66", "cc9966"], // Bright gold
-
-    // Muted
-    muted1: ["f5d6b2", "d1a68a"], // Soft Pink and Medium Tan
   },
 
   hair: {
-    // Ordered from darkest to lightest, grouped by color family
     darkerBlack: ["313131", "393939"], // Adjusted darker black
     black: ["1a1a1a", "0d0d0d"], // Natural black
     darkBrown: ["3b2417", "2a1a11"], // Dark brown
@@ -83,7 +90,6 @@ export const CHARACTER_COLORS = {
     dirtyBlonde: ["f0e68c", "d1c76b"], // Dirty blonde
     ashBlonde: ["c2b280", "a89f7d"], // Ash blonde
     platinum: ["e8e6e1", "c2c0bb"], // Light blonde
-    default: ["4e4b49", "3e3b39"], // Original gray
     silver: ["c0c0c0", "a6a6a6"], // Silver
     white: ["ffffff", "e6e6e6"], // White/Gray
     black: ["4b3d3f", "3a3537"], // Soft black
