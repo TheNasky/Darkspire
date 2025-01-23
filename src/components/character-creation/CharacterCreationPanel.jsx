@@ -4,29 +4,42 @@ import CharacterSprite from "../CharacterSprite";
 import { CHARACTER_CLASSES } from "../../constants/characters";
 import { CHARACTER_COLORS } from "../../constants/characterColors";
 
-// Convert our color configurations to the format needed for the color picker
-const COLOR_OPTIONS = {
-  hair: [
-    { value: "#4e4b49", scheme: "default" }, // Default hair color first
-    ...Object.entries(CHARACTER_COLORS.hair).map(([key, colors]) => ({
-      value: `#${colors[0]}`,
-      scheme: key,
-    })),
-  ],
-  skin: [
-    { value: "#f8c090", scheme: "default" }, // Default skin color first
-    ...Object.entries(CHARACTER_COLORS.skin).map(([key, colors]) => ({
-      value: `#${colors[0]}`,
-      scheme: key,
-    })),
-  ],
-  clothes: [
-    { value: "#6098e8", scheme: "default" }, // Default clothes color first
-    ...Object.entries(CHARACTER_COLORS.clothes).map(([key, colors]) => ({
-      value: `#${colors[0]}`,
-      scheme: key,
-    })),
-  ],
+// Replace the static COLOR_OPTIONS with a function
+const getColorOptions = (selectedClass) => {
+  if (!selectedClass?.spritesheet?.baseColors) return {};
+
+  const options = {};
+  
+  Object.entries(selectedClass.spritesheet.baseColors).forEach(([part, baseColors]) => {
+    // Create a Set to track unique color values
+    const uniqueColors = new Set();
+    
+    // Start with the character's actual default color
+    const defaultOption = {
+      value: `#${baseColors[0]}`,
+      scheme: "default"
+    };
+    uniqueColors.add(defaultOption.value);
+    
+    // Initialize the array with the default color
+    options[part] = [defaultOption];
+    
+    // Add colors from CHARACTER_COLORS if they're not already included
+    if (CHARACTER_COLORS[part]) {
+      Object.entries(CHARACTER_COLORS[part]).forEach(([key, colors]) => {
+        const colorValue = `#${colors[0]}`;
+        if (!uniqueColors.has(colorValue)) {
+          uniqueColors.add(colorValue);
+          options[part].push({
+            value: colorValue,
+            scheme: key
+          });
+        }
+      });
+    }
+  });
+
+  return options;
 };
 
 const ColorPicker = ({ category, colors, selectedScheme, onSelect, mobile }) => {
@@ -125,10 +138,14 @@ const ColorOption = ({ color, selected, onClick }) => (
 export default function CharacterCreationPanel({ selectedClass, setSelectedClass }) {
   const [currentPage, setCurrentPage] = useState(0);
   const [hoveredButtonId, setHoveredButtonId] = useState(null);
-  const [selectedColorScheme, setSelectedColorScheme] = useState({
-    hair: "default",
-    skin: "default",
-    clothes: "default",
+  const [selectedColorScheme, setSelectedColorScheme] = useState(() => {
+    const schemes = {};
+    if (selectedClass?.spritesheet?.baseColors) {
+      Object.keys(selectedClass.spritesheet.baseColors).forEach(part => {
+        schemes[part] = "default";
+      });
+    }
+    return schemes;
   });
 
   // Updated to match grid layout
@@ -176,17 +193,36 @@ export default function CharacterCreationPanel({ selectedClass, setSelectedClass
 
     Object.entries(character.spritesheet.baseColors).forEach(([part, baseColors]) => {
       const selectedScheme = selectedColorScheme[part];
-      const newColors = CHARACTER_COLORS[part][selectedScheme];
+      
+      // If default is selected, use the character's own base colors
+      const newColors = selectedScheme === "default" 
+        ? baseColors  // Use character's base colors directly
+        : CHARACTER_COLORS[part][selectedScheme];  // Use colors from COLOR_COLORS for other schemes
 
       if (baseColors && newColors) {
         baseColors.forEach((baseColor, index) => {
-          colorMap[baseColor] = newColors[index];
+          colorMap[baseColor] = selectedScheme === "default" 
+            ? baseColor  // Keep original color for default
+            : newColors[index];  // Use new color for other schemes
         });
       }
     });
 
     return colorMap;
   };
+
+  // Update selectedColorScheme when character changes
+  useEffect(() => {
+    setSelectedColorScheme(() => {
+      const newSchemes = {};
+      if (selectedClass?.spritesheet?.baseColors) {
+        Object.keys(selectedClass.spritesheet.baseColors).forEach(part => {
+          newSchemes[part] = "default";
+        });
+      }
+      return newSchemes;
+    });
+  }, [selectedClass]);
 
   return (
     <div className="flex flex-col lg:flex-row gap-2 lg:gap-6 h-full">
@@ -213,8 +249,8 @@ export default function CharacterCreationPanel({ selectedClass, setSelectedClass
       {/* Mobile Color Customization */}
       <div className="lg:hidden">
         <div className="bg-[#E6D5BC] rounded-md p-2 border border-[#2A160C]/20">
-          <div className="grid grid-cols-2 gap-2">
-            {Object.entries(COLOR_OPTIONS).map(([category, colors]) => (
+          <div className="grid grid-cols-2 gap-2 min-h-[12rem]">
+            {Object.entries(getColorOptions(selectedClass)).map(([category, colors]) => (
               <ColorPicker
                 key={category}
                 category={category}
@@ -295,8 +331,7 @@ export default function CharacterCreationPanel({ selectedClass, setSelectedClass
                           action="idle"
                           size="19rem"
                           colorMap={
-                            selectedClass.id === characterClass.id ||
-                            hoveredButtonId === characterClass.id
+                            selectedClass.id === characterClass.id 
                               ? getColorMap()
                               : undefined
                           }
@@ -317,7 +352,7 @@ export default function CharacterCreationPanel({ selectedClass, setSelectedClass
                 <button
                   key={index}
                   onClick={() => setCurrentPage(index)}
-                  className={`w-6 h-1 rounded-full transition-all duration-200 ${
+                  className={`w-6 h-1 rounded-full transition-all duration-200 my-2 lg:my-0 ${
                     currentPage === index 
                       ? "bg-[#2A160C] scale-110" 
                       : "bg-[#2A160C]/20 hover:bg-[#2A160C]/40"
@@ -342,8 +377,8 @@ export default function CharacterCreationPanel({ selectedClass, setSelectedClass
         {/* Desktop Color Customization */}
         <div className="hidden lg:block">
           <div className="bg-[#E6D5BC] rounded-md lg:rounded-xl p-2 lg:p-4 border border-[#2A160C]/20 lg:border-2">
-            <div className="grid grid-cols-2 gap-3 lg:gap-4">
-              {Object.entries(COLOR_OPTIONS).map(([category, colors]) => (
+            <div className="grid grid-cols-2 gap-3 lg:gap-4 lg:min-h-[15rem]">
+              {Object.entries(getColorOptions(selectedClass)).map(([category, colors]) => (
                 <ColorPicker
                   key={category}
                   category={category}
