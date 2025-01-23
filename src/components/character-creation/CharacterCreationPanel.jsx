@@ -229,7 +229,7 @@ export default function CharacterCreationPanel({ selectedClass, setSelectedClass
       {/* Top Section - Mobile Layout */}
       <div className="flex flex-row lg:hidden gap-2 h-32">
         {/* Character Preview */}
-        <div className="w-[50%] lg:w-1/2 aspect-square">
+        <div className="w-[50%] min-w-[50%] aspect-square">
           <div className="h-full bg-[#E6D5BC] rounded-lg border-2 border-[#2A160C]/20 flex items-center justify-center group relative overflow-hidden">
             <div className="relative bottom-1 lg:bottom-0">
               <CharacterSprite
@@ -243,7 +243,19 @@ export default function CharacterCreationPanel({ selectedClass, setSelectedClass
         </div>
 
         {/* Portrait - Mobile */}
-        <div className="w-[50%] lg:w-1/2 bg-[#E6D5BC] rounded-md p-2 border border-[#2A160C]/20"></div>
+        <div className="w-[50%] bg-[#E6D5BC] rounded-md border border-[#2A160C]/20 overflow-hidden">
+          {selectedClass.portrait ? (
+            <img 
+              src={selectedClass.portrait} 
+              alt={`${selectedClass.name} portrait`}
+              className="w-[126%] h-[126%] object-contain relative -top-4"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-center text-[#8B4513]/50">
+              No portrait
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Mobile Color Customization */}
@@ -329,7 +341,7 @@ export default function CharacterCreationPanel({ selectedClass, setSelectedClass
                         <CharacterSprite
                           characterId={characterClass.id}
                           action="idle"
-                          size="19rem"
+                          size={window.innerWidth >= 1024 ? "18rem" : "32rem"}
                           colorMap={
                             selectedClass.id === characterClass.id 
                               ? getColorMap()

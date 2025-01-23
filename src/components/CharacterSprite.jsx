@@ -136,7 +136,7 @@ export default function CharacterSprite({
     return () => clearInterval(intervalId);
   }, [characterId, action, isDisabled]);
 
-  if (debug.loading) return <div className="text-white">Loading sprites...</div>;
+  if (debug.loading) return <div className="text-white"></div>;
   if (debug.error) return <div className="text-red-500">Error: {debug.error}</div>;
 
   const character = getClassById(characterId);

@@ -4,6 +4,7 @@ export const CHARACTER_CLASSES = [
     name: "Wizard",
     description: "A powerful spellcaster who excels at area damage and buffs, unleashing devastating spells to eliminate threats and empower allies.",
     unlocked: true,
+    portrait: "/assets/characters/Wizard/WizardPortrait.png",
     spritesheet: {
       path: "/assets/characters/Wizard/Wizard.png",
       frameWidth: 32,
