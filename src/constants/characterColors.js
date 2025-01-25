@@ -86,7 +86,7 @@ export const CHARACTER_COLORS = {
     dirtyBlonde: ["f0e68c", "d1c76b", "b2a84a"], // Dirty blonde
     ashBlonde: ["c2b280", "a89f7d", "8e855a"], // Ash blonde
     platinum: ["e8e6e1", "c2c0bb", "9c9a95"], // Light blonde
-    default: ["4e4b49", "3e3b39", "2e2b29"], // Original gray
+    gray: ["4e4b49", "3e3b39", "2e2b29"], // Original gray
     silver: ["c0c0c0", "a6a6a6", "8c8c8c"], // Silver
     white: ["ffffff", "e6e6e6", "cccccc"], // White/Gray
     softBlack: ["4b3d3f", "3a3537", "292729"], // Soft black

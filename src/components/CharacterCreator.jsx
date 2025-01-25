@@ -1,14 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import CharacterCreationPanel from "./character-creation/CharacterCreationPanel";
 import StatsSelection from "./character-creation/StatsSelection";
 import CharacterResume from "./character-creation/CharacterResume";
+import ConfirmationModal from "./ConfirmationModal";
 import { CHARACTER_CLASSES } from "../constants/characters";
 import { BASE_STATS } from "../constants/characterStats.js";
 import useGameStore from "../store/gameStore";
+import useSaveStore from '../store/saveStore';
 
 export default function CharacterCreator({ isOpen, onClose, onSelect }) {
   const [stage, setStage] = useState(1);
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const characterData = useGameStore((state) => state.characterCreation);
   const [selectedClass, setSelectedClass] = useState(CHARACTER_CLASSES[0]);
   const [selectedColorScheme, setSelectedColorScheme] = useState(() => {
     const schemes = {};
@@ -29,6 +33,32 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
   });
 
   const [pointsRemaining, setPointsRemaining] = useState(10);
+
+  const addSave = useSaveStore((state) => state.addSave);
+
+  useEffect(() => {
+    if (isOpen) {
+      setStage(1);
+      setSelectedClass(CHARACTER_CLASSES[0]);
+      setSelectedColorScheme(() => {
+        const schemes = {};
+        if (CHARACTER_CLASSES[0]?.spritesheet?.baseColors) {
+          Object.keys(CHARACTER_CLASSES[0].spritesheet.baseColors).forEach(part => {
+            schemes[part] = "default";
+          });
+        }
+        return schemes;
+      });
+      setStats(() => {
+        const initialStats = {};
+        Object.keys(BASE_STATS).forEach((stat) => {
+          initialStats[stat] = BASE_STATS[stat].base;
+        });
+        return initialStats;
+      });
+      setPointsRemaining(10);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -54,18 +84,35 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
   };
 
   const handleNext = () => {
-    if (stage === 1) {
-      useGameStore.getState().setCharacterCreation({
-        selectedClass: selectedClass,
-        colorSchemes: selectedColorScheme
-      });
+    if (stage < 3) {
+      setStage((prev) => prev + 1);
+    } else {
+      setIsConfirmationOpen(true);
     }
-    if (stage < 2) setStage((prev) => prev + 1);
-    else onSelect(selectedClass.id);
   };
 
   const handleBack = () => {
     if (stage > 1) setStage((prev) => prev - 1);
+  };
+
+  const isCreateButtonDisabled = stage === 3 && (!characterData.characterName || characterData.characterName.length < 1);
+
+  const handleConfirmCreate = () => {
+    const saveData = {
+      id: selectedClass.id,
+      name: characterData.characterName,
+      level: 1,
+      gold: 0,
+      class: selectedClass.name,
+      location: "Tutorial Area",
+      stats: stats,
+      colorSchemes: selectedColorScheme,
+      createdAt: new Date().toISOString()
+    };
+
+    addSave(saveData);
+    setIsConfirmationOpen(false);
+    onSelect(selectedClass.id);
   };
 
   return (
@@ -136,7 +183,7 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
             </button>
           </div>
 
-          {/* Stage Indicators in centered container */}
+          {/* Stage Indicators */}
           <div className="flex-1 flex justify-center">
             <div className="flex gap-2 lg:gap-3">
               {[1, 2, 3].map((s) => (
@@ -157,19 +204,27 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
           {/* Right button in its own container */}
           <div className="w-[7rem] lg:w-[12rem] flex justify-end">
             <button
-              onClick={() => setStage((prev) => Math.min(3, prev + 1))}
+              onClick={handleNext}
+              disabled={isCreateButtonDisabled}
               className={`px-3 lg:px-6 py-[0.45rem] lg:py-2.5 rounded-lg text-[0.55rem] lg:text-[1rem] font-medium transition-all duration-200
-                ${stage === 3 
+                ${isCreateButtonDisabled
                   ? 'bg-[#2A160C]/40 text-white/50 cursor-not-allowed' 
                   : 'bg-[#2A160C] text-white hover:bg-[#2A160C]/80 active:bg-[#2A160C]/90'
                 }`}
-              disabled={stage === 3}
             >
-              Next
+              {stage === 3 ? 'Create Character' : 'Next'}
             </button>
           </div>
         </div>
       </motion.div>
+
+      <ConfirmationModal
+        isOpen={isConfirmationOpen}
+        onClose={() => setIsConfirmationOpen(false)}
+        onConfirm={handleConfirmCreate}
+        title="Create Character"
+        message="Are you done customizing your character? This will create your character and begin your journey."
+      />
     </motion.div>
   );
 }

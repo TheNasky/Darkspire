@@ -15,7 +15,7 @@ export default function ConfirmationModal({ isOpen, onClose, onConfirm, title, m
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-[#F5E6D3] rounded-xl p-6 border-4 border-[#2A160C]/20 max-w-md w-full"
+        className="bg-[#F5E6D3] rounded-xl p-6 border-4 border-[#2A160C]/20 max-w-lg w-full"
         onClick={e => e.stopPropagation()}
       >
         <h2 className="text-[1rem] lg:text-[1.3rem] font-bold text-[#2A160C] mb-4">
