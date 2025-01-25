@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import CharacterSprite from "../CharacterSprite";
 import { CHARACTER_CLASSES } from "../../constants/characters";
 import { CHARACTER_COLORS } from "../../constants/characterColors";
+import useGameStore from '../../store/gameStore';
 
 // Replace the static COLOR_OPTIONS with a function
 const getColorOptions = (selectedClass) => {
@@ -135,18 +136,14 @@ const ColorOption = ({ color, selected, onClick }) => (
   />
 );
 
-export default function CharacterCreationPanel({ selectedClass, setSelectedClass }) {
+export default function CharacterCreationPanel({ 
+  selectedClass, 
+  setSelectedClass, 
+  selectedColorScheme, 
+  setSelectedColorScheme 
+}) {
   const [currentPage, setCurrentPage] = useState(0);
   const [hoveredButtonId, setHoveredButtonId] = useState(null);
-  const [selectedColorScheme, setSelectedColorScheme] = useState(() => {
-    const schemes = {};
-    if (selectedClass?.spritesheet?.baseColors) {
-      Object.keys(selectedClass.spritesheet.baseColors).forEach(part => {
-        schemes[part] = "default";
-      });
-    }
-    return schemes;
-  });
 
   // Updated to match grid layout
   const classesPerPage = window.innerWidth >= 1024 ? 6 : 4;
@@ -213,16 +210,24 @@ export default function CharacterCreationPanel({ selectedClass, setSelectedClass
 
   // Update selectedColorScheme when character changes
   useEffect(() => {
-    setSelectedColorScheme(() => {
-      const newSchemes = {};
-      if (selectedClass?.spritesheet?.baseColors) {
-        Object.keys(selectedClass.spritesheet.baseColors).forEach(part => {
-          newSchemes[part] = "default";
-        });
-      }
-      return newSchemes;
-    });
-  }, [selectedClass]);
+    const newSchemes = {};
+    if (selectedClass?.spritesheet?.baseColors) {
+      Object.keys(selectedClass.spritesheet.baseColors).forEach(part => {
+        newSchemes[part] = "default";
+      });
+    }
+    setSelectedColorScheme(newSchemes);
+  }, [selectedClass, setSelectedColorScheme]);
+
+  // Add useEffect to update store whenever selectedClass or selectedColorScheme changes
+  useEffect(() => {
+    const data = {
+      selectedClassId: selectedClass.id,
+      colorSchemes: selectedColorScheme
+    };
+    useGameStore.getState().setCharacterCreation(data);
+    console.log('Character Creation Panel - Stored Data:', useGameStore.getState().characterCreation);
+  }, [selectedClass.id, selectedColorScheme]);
 
   return (
     <div className="flex flex-col lg:flex-row gap-2 lg:gap-6 h-full">

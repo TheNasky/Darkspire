@@ -1,7 +1,16 @@
 import { motion } from "framer-motion";
 import { BASE_STATS } from "../../constants/characterStats";
+import { useEffect } from 'react';
+import useGameStore from '../../store/gameStore';
 
 export default function StatsSelection({ stats, derivedStats, pointsRemaining, handleStatChange }) {
+  useEffect(() => {
+    useGameStore.getState().setCharacterCreation({
+      stats: stats
+    });
+    console.log('Stats Selection - Stored Data:', useGameStore.getState().characterCreation);
+  }, [stats]);
+
   const getStatColor = (stat) => {
     if (stats[stat] > BASE_STATS[stat].base) return "text-emerald-600 font-bold";
     if (stats[stat] < BASE_STATS[stat].base) return "text-red-600 font-bold";

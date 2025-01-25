@@ -2,12 +2,24 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import CharacterCreationPanel from "./character-creation/CharacterCreationPanel";
 import StatsSelection from "./character-creation/StatsSelection";
+import CharacterResume from "./character-creation/CharacterResume";
 import { CHARACTER_CLASSES } from "../constants/characters";
 import { BASE_STATS } from "../constants/characterStats.js";
+import useGameStore from "../store/gameStore";
 
 export default function CharacterCreator({ isOpen, onClose, onSelect }) {
   const [stage, setStage] = useState(1);
   const [selectedClass, setSelectedClass] = useState(CHARACTER_CLASSES[0]);
+  const [selectedColorScheme, setSelectedColorScheme] = useState(() => {
+    const schemes = {};
+    if (CHARACTER_CLASSES[0]?.spritesheet?.baseColors) {
+      Object.keys(CHARACTER_CLASSES[0].spritesheet.baseColors).forEach(part => {
+        schemes[part] = "default";
+      });
+    }
+    return schemes;
+  });
+
   const [stats, setStats] = useState(() => {
     const initialStats = {};
     Object.keys(BASE_STATS).forEach((stat) => {
@@ -42,6 +54,12 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
   };
 
   const handleNext = () => {
+    if (stage === 1) {
+      useGameStore.getState().setCharacterCreation({
+        selectedClass: selectedClass,
+        colorSchemes: selectedColorScheme
+      });
+    }
     if (stage < 2) setStage((prev) => prev + 1);
     else onSelect(selectedClass.id);
   };
@@ -69,7 +87,7 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
         <div className="flex justify-between items-center mb-4 lg:mb-6">
           <div>
             <h2 className="text-[1.2rem] lg:text-[2rem] font-bold text-[#2A160C]">
-              {stage === 1 ? 'Create Character' : 'Choose Stats'}
+              {stage === 1 ? 'Create Character' : stage === 2 ? 'Choose Stats' : 'Character Resume'}
             </h2>
           </div>
           <button
@@ -86,19 +104,23 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
             <CharacterCreationPanel
               selectedClass={selectedClass}
               setSelectedClass={setSelectedClass}
+              selectedColorScheme={selectedColorScheme}
+              setSelectedColorScheme={setSelectedColorScheme}
             />
-          ) : (
+          ) : stage === 2 ? (
             <StatsSelection
               stats={stats}
               derivedStats={derivedStats}
               pointsRemaining={pointsRemaining}
               handleStatChange={handleStatChange}
             />
+          ) : (
+            <CharacterResume />
           )}
         </div>
 
-{/* Navigation */}
-<div className="flex items-center pt-2 lg:pt-4 border-t border-[#2A160C]/20 mt-2 lg:mt-4">
+        {/* Navigation */}
+        <div className="flex items-center pt-2 lg:pt-4 border-t border-[#2A160C]/20 mt-2 lg:mt-4">
           {/* Left button in its own container */}
           <div className="w-[7rem] lg:w-[12rem]">
             <button
