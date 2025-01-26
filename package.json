@@ -13,6 +13,7 @@
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "framer-motion": "^11.18.1",
+    "idb": "^8.0.1",
     "my-phaser-game": "file:",
     "phaser": "^3.87.0",
     "react": "^18.3.1",
