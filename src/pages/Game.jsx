@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import Phaser from "phaser";
 import MainMenuBackground from "../game/scenes/MainMenuBackground";
-import StageScene from "../game/scenes/StageScene";
 import MainMenu from "./MainMenu";
+
 
 let game; // Singleton game instance
 
@@ -18,7 +18,7 @@ export default function Game() {
         width: window.innerWidth,
         height: window.innerHeight,
         backgroundColor: "#0A0B0F",
-        scene: [MainMenuBackground, StageScene],
+        scene: [MainMenuBackground],
         physics: {
           default: "arcade",
           arcade: {
@@ -51,8 +51,6 @@ export default function Game() {
     switch(currentScene) {
       case 'menu':
         return <MainMenu />;
-      case 'adventure':
-        return <Stage config={STAGE_CONFIGS.TUTORIAL} mode="map" />;
       default:
         return null;
     }
