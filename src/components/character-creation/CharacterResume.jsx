@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import useGameStore from "../../store/gameStore";
+import useGameStore from "../../store/characterStore";
 import { CHARACTER_CLASSES } from "../../constants/characters";
 import { CHARACTER_COLORS } from "../../constants/characterColors";
 import { BASE_STATS } from "../../constants/characterStats";

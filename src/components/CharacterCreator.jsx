@@ -6,7 +6,7 @@ import CharacterResume from "./character-creation/CharacterResume";
 import ConfirmationModal from "./ConfirmationModal";
 import { CHARACTER_CLASSES } from "../constants/characters";
 import { BASE_STATS } from "../constants/characterStats.js";
-import useGameStore from "../store/gameStore";
+import useGameStore from "../store/characterStore.js";
 import useSaveStore from '../store/saveStore';
 
 export default function CharacterCreator({ isOpen, onClose, onSelect }) {

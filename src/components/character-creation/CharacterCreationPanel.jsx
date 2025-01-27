@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import CharacterSprite from "../CharacterSprite";
 import { CHARACTER_CLASSES } from "../../constants/characters";
 import { CHARACTER_COLORS } from "../../constants/characterColors";
-import useGameStore from '../../store/gameStore';
+import useGameStore from '../../store/characterStore';
 
 // Replace the static COLOR_OPTIONS with a function
 const getColorOptions = (selectedClass) => {

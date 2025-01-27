@@ -5,6 +5,7 @@ import { CHARACTER_CLASSES } from "../constants/characters";
 import { CHARACTER_COLORS } from "../constants/characterColors";
 import { useEffect, useState } from "react";
 import ConfirmationModal from "./ConfirmationModal";
+import useGameStore from "../store/gameStore";
 
 export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "load" }) {
   if (!isOpen) return null;
@@ -72,6 +73,27 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
     setDeleteConfirmation({ isOpen: false, slot: null });
   };
 
+  const handleSlotSelect = (slot) => {
+    onClose();
+    
+    const game = useGameStore.getState().game;
+    
+    if (slot.character && game) {
+      game.events.emit('changeScene', 'StageBackground', { 
+        biome: 'FOREST',
+        stage: {
+          name: 'Tutorial',
+          gridSize: { rows: 5, cols: 5 },
+          character: slot.character,
+          enemies: [],
+          hazards: []
+        }
+      });
+    } else {
+      onSelectSlot(slot);
+    }
+  };
+
   return (
     <>
       <motion.div
@@ -100,13 +122,13 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
 
           <div className="space-y-4 lg:space-y-6">
             {saveSlots.map((slot) => (
-              <motion.button
+              <motion.div
                 key={slot.id} 
+                onClick={(e) => handleSlotSelect(slot)}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
-                onClick={() => onSelectSlot(slot)}
                 className="relative w-full p-3 lg:p-6 bg-[#E6D5BC] rounded-xl border-2 border-[#2A160C]/20 
-                        hover:bg-[#D4C3AA] transition-all duration-200 group"
+                        hover:bg-[#D4C3AA] transition-all duration-200 group cursor-pointer justify-center"
               >
                 {slot.character && (
                   <button
@@ -149,7 +171,7 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
 
                   {/* Right side - Save info and character details */}
                   <div className="flex-grow">
-                    <div className="flex flex-col gap-2 lg:gap-3">
+                    <div className="flex flex-col gap-2 lg:gap-3 text-center">
                       <span className="text-[#2A160C] font-bold text-[0.6rem] lg:text-[1.2rem]">
                         {slot.name}
                       </span>
@@ -188,7 +210,7 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
                     </div>
                   </div>
                 </div>
-              </motion.button>
+              </motion.div>
             ))}
           </div>
         </motion.div>

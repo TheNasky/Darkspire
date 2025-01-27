@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { BASE_STATS } from "../../constants/characterStats";
 import { useEffect } from 'react';
-import useGameStore from '../../store/gameStore';
+import useGameStore from '../../store/characterStore';
 
 export default function StatsSelection({ stats, derivedStats, pointsRemaining, handleStatChange }) {
   useEffect(() => {
