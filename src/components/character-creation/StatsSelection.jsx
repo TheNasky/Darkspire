@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
-import { BASE_STATS } from "../../constants/characterStats";
+import { BASE_STATS, getDisplayStats } from "../../constants/characterStats";
 import { useEffect } from 'react';
 import useGameStore from '../../store/characterStore';
 
-export default function StatsSelection({ stats, derivedStats, pointsRemaining, handleStatChange }) {
+export default function StatsSelection({ stats, pointsRemaining, handleStatChange }) {
   useEffect(() => {
     useGameStore.getState().setCharacterCreation({
       stats: stats
@@ -16,6 +16,8 @@ export default function StatsSelection({ stats, derivedStats, pointsRemaining, h
     if (stats[stat] < BASE_STATS[stat].base) return "text-red-600 font-bold";
     return "text-[#2A160C]";
   };
+
+  const displayStats = getDisplayStats(stats);
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
@@ -89,7 +91,7 @@ export default function StatsSelection({ stats, derivedStats, pointsRemaining, h
           Resulting Stats
         </h3>
         <div className="grid grid-cols-2 gap-2 lg:gap-3">
-          {Object.entries(derivedStats).map(([stat, value]) => (
+          {Object.entries(displayStats).map(([stat, value]) => (
             <div 
               key={stat} 
               className="bg-[#E6D5BC] rounded-lg lg:rounded-xl p-2 lg:p-3 border-2 border-[#2A160C]/20 hover:bg-[#D4C3AA] transition-all duration-200"
