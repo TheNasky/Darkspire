@@ -1,14 +1,22 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import MainMenu from "./MainMenu";
 import Stage from "./Stage";
 import useGameStore from "../store/gameStore";
 
 export default function Game() {
   const { initGame, destroyGame, isLoaded, currentScene } = useGameStore();
+  const initialized = useRef(false);
 
   useEffect(() => {
-    initGame();
-    return () => destroyGame();
+    if (!initialized.current) {
+      initGame();
+      initialized.current = true;
+    }
+
+    return () => {
+      destroyGame();
+      initialized.current = false;
+    };
   }, []);
 
   const renderUI = () => {

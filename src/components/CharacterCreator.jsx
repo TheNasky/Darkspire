@@ -5,7 +5,6 @@ import StatsSelection from "./character-creation/StatsSelection";
 import CharacterResume from "./character-creation/CharacterResume";
 import ConfirmationModal from "./ConfirmationModal";
 import { CHARACTER_CLASSES } from "../constants/characters";
-import { BASE_STATS } from "../constants/characterStats.js";
 import useGameStore from "../store/characterStore.js";
 import useSaveStore from '../store/saveStore';
 
@@ -25,14 +24,15 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
   });
 
   const [stats, setStats] = useState(() => {
+    const selectedClass = CHARACTER_CLASSES.find(c => c.id === CHARACTER_CLASSES[0].id);
     const initialStats = {};
-    Object.keys(BASE_STATS).forEach((stat) => {
-      initialStats[stat] = BASE_STATS[stat].base;
+    Object.entries(selectedClass.baseStats).forEach(([stat, value]) => {
+      initialStats[stat] = value;
     });
     return initialStats;
   });
 
-  const [pointsRemaining, setPointsRemaining] = useState(10);
+  const [pointsRemaining, setPointsRemaining] = useState(8);
 
   const addSave = useSaveStore((state) => state.addSave);
 
@@ -50,23 +50,39 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
         return schemes;
       });
       setStats(() => {
+        const selectedClass = CHARACTER_CLASSES.find(c => c.id === CHARACTER_CLASSES[0].id);
         const initialStats = {};
-        Object.keys(BASE_STATS).forEach((stat) => {
-          initialStats[stat] = BASE_STATS[stat].base;
+        Object.entries(selectedClass.baseStats).forEach(([stat, value]) => {
+          initialStats[stat] = value;
         });
         return initialStats;
       });
-      setPointsRemaining(10);
+      setPointsRemaining(8);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    setStats(() => {
+      const initialStats = {};
+      Object.entries(selectedClass.baseStats).forEach(([stat, value]) => {
+        initialStats[stat] = value;
+      });
+      return initialStats;
+    });
+    setPointsRemaining(8);
+  }, [selectedClass]);
 
   if (!isOpen) return null;
 
   const handleStatChange = (stat, change) => {
     const newValue = stats[stat] + change;
+    const baseValue = selectedClass.baseStats[stat];
+    const minAllowed = Math.max(0, baseValue - 2);
+    const maxAllowed = baseValue + 5;
+
     if (
-      newValue >= BASE_STATS[stat].min &&
-      newValue <= BASE_STATS[stat].max &&
+      newValue >= minAllowed &&
+      newValue <= maxAllowed &&
       (change < 0 || pointsRemaining > 0)
     ) {
       setStats((prev) => ({ ...prev, [stat]: newValue }));

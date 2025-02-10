@@ -127,7 +127,7 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
                 onClick={(e) => handleSlotSelect(slot)}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
-                className="relative w-full p-3 lg:p-6 bg-[#E6D5BC] rounded-xl border-2 border-[#2A160C]/20 
+                className="h-[7.5rem] lg:h-[12.5rem] relative w-full p-3 lg:p-6 bg-[#E6D5BC] rounded-xl border-2 border-[#2A160C]/20 
                         hover:bg-[#D4C3AA] transition-all duration-200 group cursor-pointer justify-center"
               >
                 {slot.character && (
@@ -143,7 +143,7 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
                   </button>
                 )}
 
-                <div className="flex items-center gap-3 lg:gap-6">
+                <div className="flex items-center gap-3 lg:gap-6 py-2">
                   {/* Left side - Character sprite and basic info */}
                   <div className="flex-shrink-0 w-16 lg:w-32 text-center">
                     {slot.character ? (

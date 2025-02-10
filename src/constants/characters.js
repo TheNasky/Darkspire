@@ -56,6 +56,17 @@ export const CHARACTER_CLASSES = [
         hair: ["4e4b49", "3e3b39"],
         skin: ["f8c090", "c88850"]
       } 
+    },
+    baseStats: {
+      toughness: 5,
+      endurance: 5,
+      strength: 4,
+      potency: 15,
+      spirit: 12,
+      mind: 15,
+      dexterity: 6,
+      lethality: 4,
+      resistance: 6
     }
   },
   {
@@ -98,6 +109,17 @@ export const CHARACTER_CLASSES = [
         clothes: ["6098e8", "4058c0"],
         skin: ["f8c090", "c88850"]
       } 
+    },
+    baseStats: {
+      toughness: 7,
+      endurance: 10,
+      strength: 8,
+      potency: 5,
+      spirit: 8,
+      mind: 6,
+      dexterity: 15,
+      lethality: 8,
+      resistance: 5
     }
   },
   {
@@ -121,6 +143,17 @@ export const CHARACTER_CLASSES = [
         clothes: ["6098e8", "4058c0"],
         skin: ["f8c090", "c88850"]
       } 
+    },
+    baseStats: {
+      toughness: 15,
+      endurance: 12,
+      strength: 12,
+      potency: 3,
+      spirit: 5,
+      mind: 4,
+      dexterity: 6,
+      lethality: 5,
+      resistance: 10
     }
   },
   {
@@ -164,6 +197,17 @@ export const CHARACTER_CLASSES = [
         hair: ["e09128", "e0540d"],
         skin: ["f8c090", "c88850"]
       } 
+    },
+    baseStats: {
+      toughness: 12,
+      endurance: 15,
+      strength: 15,
+      potency: 2,
+      spirit: 4,
+      mind: 3,
+      dexterity: 8,
+      lethality: 8,
+      resistance: 5
     }
   },
   {
@@ -188,6 +232,17 @@ export const CHARACTER_CLASSES = [
         skin: ["f8c090", "c88850"]
 
       } 
+    },
+    baseStats: {
+      toughness: 8,
+      endurance: 10,
+      strength: 10,
+      potency: 4,
+      spirit: 6,
+      mind: 5,
+      dexterity: 12,
+      lethality: 12,
+      resistance: 5
     }
   },
   {
@@ -232,6 +287,17 @@ export const CHARACTER_CLASSES = [
         skin: ["f8c090", "c88850"],
         cape: ["d01000","901000"],
       }
+    },
+    baseStats: {
+      toughness: 6,
+      endurance: 8,
+      strength: 8,
+      potency: 5,
+      spirit: 7,
+      mind: 6,
+      dexterity: 15,
+      lethality: 15,
+      resistance: 2
     }
   },
   {
@@ -275,6 +341,17 @@ export const CHARACTER_CLASSES = [
         hair: ["e5e9de", "aeb6a1"],
         skin: ["f8c090", "c88850"]
       }
+    },
+    baseStats: {
+      toughness: 10,
+      endurance: 8,
+      strength: 6,
+      potency: 12,
+      spirit: 15,
+      mind: 12,
+      dexterity: 4,
+      lethality: 2,
+      resistance: 3
     }
   },
 ];
