@@ -115,7 +115,9 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
     if (stage > 1) setStage((prev) => prev - 1);
   };
 
-  const isCreateButtonDisabled = stage === 3 && (!characterData.characterName || characterData.characterName.length < 1);
+  const isCreateButtonDisabled = 
+    (stage === 3 && (!characterData.characterName || characterData.characterName.length < 1)) ||
+    (stage === 2 && pointsRemaining > 0);
 
   const handleConfirmCreate = async () => {
     try {

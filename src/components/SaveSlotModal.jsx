@@ -80,9 +80,15 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
     setDeleteConfirmation({ isOpen: true, slot });
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (deleteConfirmation.slot?.saveId) {
-      deleteSave(deleteConfirmation.slot.saveId);
+      try {
+        await characterService.deleteCharacter(deleteConfirmation.slot.saveId);
+        const response = await characterService.getCharacters();
+        setCharacters(response.payload || []);
+      } catch (error) {
+        console.error("Error deleting character:", error);
+      }
     }
     setDeleteConfirmation({ isOpen: false, slot: null });
   };
@@ -234,8 +240,9 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
         isOpen={deleteConfirmation.isOpen}
         onClose={() => setDeleteConfirmation({ isOpen: false, slot: null })}
         onConfirm={handleConfirmDelete}
-        title="Delete Save"
-        message="Are you sure you want to delete this save file? This action cannot be undone."
+        title="Delete Character"
+        message="This action cannot be undone. Please type the character's name to confirm deletion."
+        confirmationName={deleteConfirmation.slot?.character?.name}
       />
     </>
   );

@@ -40,4 +40,21 @@ export const characterService = {
       throw error.response?.data || error.message;
     }
   },
+
+  deleteCharacter: async (characterId) => {
+    try {
+      const storedToken = localStorage.getItem("token") || useUserDataStore.getState().token;
+
+      const response = await axios.delete(`${API_URL}/characters/${characterId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${storedToken}`,
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
 };
