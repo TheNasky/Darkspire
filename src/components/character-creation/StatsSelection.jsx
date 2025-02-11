@@ -11,9 +11,10 @@ export default function StatsSelection({ stats, pointsRemaining, handleStatChang
   useEffect(() => {
     useGameStore.getState().setCharacterCreation({
       ...characterData,
-      stats: stats
+      stats: stats,
+      canProceed: pointsRemaining === 0
     });
-  }, [stats]);
+  }, [stats, pointsRemaining]);
 
   const getStatColor = (stat) => {
     if (stats[stat] > selectedClass.baseStats[stat]) return "text-emerald-600 font-bold";

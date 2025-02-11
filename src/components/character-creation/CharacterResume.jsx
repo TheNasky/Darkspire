@@ -9,7 +9,14 @@ export default function CharacterResume() {
   const [characterName, setCharacterName] = useState("");
   const characterData = useGameStore.getState().characterCreation;
   const selectedClass = CHARACTER_CLASSES.find((c) => c.id === characterData.selectedClassId);
-  const isNameValid = characterName.length >= 1;
+  const isNameValid = characterName.length >= 1 && /^[a-zA-Z0-9]+$/.test(characterName);
+
+  const handleNameChange = (e) => {
+    const value = e.target.value;
+    if (value === '' || /^[a-zA-Z0-9]+$/.test(value)) {
+      setCharacterName(value);
+    }
+  };
 
   useEffect(() => {
     useGameStore.getState().setCharacterCreation({
@@ -71,12 +78,16 @@ export default function CharacterResume() {
           <input
             type="text"
             value={characterName}
-            onChange={(e) => setCharacterName(e.target.value)}
+            onChange={handleNameChange}
+            placeholder="Character Name"
             className="w-full px-4 py-3 rounded-lg bg-white/50 border-2 border-[#2A160C]/20 
                       text-[1rem] lg:text-[1.2rem] text-[#2A160C] placeholder-[#8B4513]/50
                       focus:outline-none focus:border-[#2A160C]/40"
-            placeholder="Enter character name..."
+            maxLength={20}
           />
+          {characterName && !isNameValid && (
+            <p className="text-red-500 text-sm">Name must contain only letters and numbers</p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">

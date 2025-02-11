@@ -6,6 +6,7 @@ import { CHARACTER_COLORS } from "../constants/characterColors";
 import { useEffect, useState } from "react";
 import ConfirmationModal from "./ConfirmationModal";
 import useGameStore from "../store/gameStore";
+import { characterService } from '../services/characterService';
 
 export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "load" }) {
   if (!isOpen) return null;
@@ -13,18 +14,26 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
   const saves = useSaveStore((state) => state.saves);
   const deleteSave = useSaveStore((state) => state.deleteSave);
   const getSaves = useSaveStore((state) => state.getSaves);
+  const [characters, setCharacters] = useState([]);
+  const [error, setError] = useState("");
 
   const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, slot: null });
 
   useEffect(() => {
-    const fetchSaves = async () => {
-      await getSaves();
+    const fetchData = async () => {
+      try {
+        const response = await characterService.getCharacters();
+        setCharacters(response.payload || []);
+      } catch (error) {
+        setError(error.message || "Failed to fetch characters");
+        console.error("Error fetching characters:", error);
+      }
     };
 
     if (isOpen) {
-      fetchSaves();
+      fetchData();
     }
-  }, [isOpen, getSaves]);
+  }, [isOpen]);
 
   const getColorMap = (character) => {
     if (!character) return {};
@@ -33,15 +42,11 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
     if (!selectedClass?.spritesheet?.baseColors) return {};
 
     const colorMap = {};
-    Object.entries(selectedClass.spritesheet.baseColors).forEach(([part, baseColors]) => {
-      const selectedScheme = character.colorSchemes[part];
-
-      const newColors =
-        selectedScheme === "default" ? baseColors : CHARACTER_COLORS[part][selectedScheme];
-
-      if (baseColors && newColors) {
+    Object.entries(character.colorSchemes).forEach(([part, colors]) => {
+      if (colors && colors.length > 0) {
+        const baseColors = selectedClass.spritesheet.baseColors[part] || [];
         baseColors.forEach((baseColor, index) => {
-          colorMap[baseColor] = selectedScheme === "default" ? baseColor : newColors[index];
+          colorMap[baseColor] = colors[index] || baseColor;
         });
       }
     });
@@ -49,15 +54,24 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
     return colorMap;
   };
 
-  // Create empty slots with static names "1", "2", "3"
+  // Create slots using characters data instead of saves
   const saveSlots = [...Array(3)].map((_, index) => {
-    const existingSave = saves[index];
+    const character = characters[index];
     return {
-      id: index + 1, // Slot number for display
-      saveId: existingSave?.id, // Actual save ID from database
+      id: index + 1,
+      saveId: character?._id,
       name: `SAVE FILE ${index + 1}`,
-      playTime: existingSave ? existingSave.playTime : null,
-      character: existingSave ? existingSave.character : null,
+      playTime: null, // You might want to add this to your character data later
+      character: character ? {
+        id: character.class, // This maps to the character class id for sprites
+        name: character.name,
+        level: character.level,
+        class: CHARACTER_CLASSES.find(c => c.id === character.class)?.name || character.class,
+        location: "Tutorial Area",
+        colorSchemes: Object.fromEntries(
+          Object.entries(character.customization.colors).map(([part, colors]) => [part, colors])
+        )
+      } : null
     };
   });
 
