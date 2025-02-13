@@ -1,16 +1,10 @@
 import Phaser from "phaser";
 import { STAGE_BIOMES } from "../../constants/stageBackgrounds";
 
-export default class StageBackground extends Phaser.Scene {
-  constructor(biome = 'FOREST') {
-    super({ key: "StageBackground" });
-    this.biome = biome;
-  }
-
-  init(data) {
-    if (data.biome) {
-      this.biome = data.biome;
-    }
+export default class VillageBackground extends Phaser.Scene {
+  constructor() {
+    super({ key: "VillageBackground" });
+    this.biome = 'FOREST2';  // Village always uses FOREST2 biome
   }
 
   preload() {
@@ -34,12 +28,8 @@ export default class StageBackground extends Phaser.Scene {
       const textureWidth = texture.source[0].width;
       const textureHeight = texture.source[0].height;
 
-      // Calculate scale based on width first
       const scaleX = screenWidth / textureWidth;
-      // Then ensure height is scaled up enough to cover screen height plus some extra
       const scaleY = (screenHeight * 1.2) / textureHeight;
-      
-      // Use the larger scale for both dimensions to maintain aspect ratio
       const scale = Math.max(scaleX, scaleY);
 
       const sprite = this.add.tileSprite(
@@ -53,10 +43,8 @@ export default class StageBackground extends Phaser.Scene {
         .setScrollFactor(0)
         .setScale(scale);
 
-      // Enable pixel art rendering
       sprite.setTexture(key, undefined, { pixelArt: true });
 
-      // Calculate vertical position
       const scaledHeight = textureHeight * scale;
       const baseOffset = -(scaledHeight - screenHeight) / 2;
       const yOffset = baseOffset + (screenHeight * yOffsetMod);
@@ -65,7 +53,6 @@ export default class StageBackground extends Phaser.Scene {
       return { sprite, speed, yOffsetMod };
     });
 
-    // Handle window resize
     const resize = () => {
       const newWidth = window.innerWidth;
       const newHeight = window.innerHeight;
@@ -83,7 +70,6 @@ export default class StageBackground extends Phaser.Scene {
 
         sprite.setScale(scale);
 
-        // Recalculate vertical position
         const scaledHeight = textureHeight * scale;
         const baseOffset = -(scaledHeight - newHeight) / 2;
         const yOffset = baseOffset + (newHeight * yOffsetMod);
@@ -99,7 +85,6 @@ export default class StageBackground extends Phaser.Scene {
       window.removeEventListener('fullscreenchange', resize);
     });
 
-    // Notify game that scene is ready
     this.game.events.emit('ready');
   }
 

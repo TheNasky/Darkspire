@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 
-export default function ConfirmationModal({ isOpen, onClose, onConfirm, title, message, confirmationName }) {
+export default function ConfirmationModal({ isOpen, onClose, onConfirm, title, message, confirmationName, highlights }) {
   const [inputName, setInputName] = useState("");
   const [error, setError] = useState("");
 
@@ -15,6 +15,28 @@ export default function ConfirmationModal({ isOpen, onClose, onConfirm, title, m
     setInputName("");
     setError("");
     onConfirm();
+  };
+
+  const highlightText = (text) => {
+    if (!highlights) return text;
+
+    // If highlights is a string, convert it to an array
+    const highlightArray = Array.isArray(highlights) ? highlights : [highlights];
+
+    let highlightedText = text;
+    highlightArray.forEach(highlight => {
+      if (highlight) {
+        const regex = new RegExp(`(${highlight})`, 'gi');
+        highlightedText = highlightedText.replace(
+          regex,
+          '<span class="text-red-600 font-semibold">$1</span>'
+        );
+      }
+    });
+
+    return (
+      <span dangerouslySetInnerHTML={{ __html: highlightedText  }} />
+    );
   };
 
   return (
@@ -31,7 +53,7 @@ export default function ConfirmationModal({ isOpen, onClose, onConfirm, title, m
         exit={{ scale: 0.9, opacity: 0 }}
       >
         <h2 className="text-xl font-bold text-[#2A160C] mb-4">{title}</h2>
-        <p className="text-[#2A160C]/80 mb-6">{message}</p>
+        <p className="text-[#2A160C]/80 mb-6">{highlightText(message)}</p>
 
         {confirmationName && (
           <div className="mb-6">

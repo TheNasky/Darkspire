@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import MainMenu from "./MainMenu";
 import Stage from "./Stage";
+import Village from "./Village";
 import useGameStore from "../store/gameStore";
 
 export default function Game() {
@@ -25,6 +26,8 @@ export default function Game() {
         return <MainMenu />;
       case 'StageBackground':
         return <Stage />;
+      case 'VillageBackground':
+        return <Village />;
       default:
         return <MainMenu />;
     }

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import Phaser from 'phaser';
 import MainMenuBackground from "../game/scenes/MainMenuBackground";
 import StageBackground from "../game/scenes/StageBackground";
+import VillageBackground from "../game/scenes/VillageBackground";
 
 const useGameStore = create((set, get) => ({
   game: null,
@@ -16,7 +17,19 @@ const useGameStore = create((set, get) => ({
         width: window.innerWidth,
         height: window.innerHeight,
         backgroundColor: "#0A0B0F",
-        scene: [MainMenuBackground, StageBackground],
+        pixelArt: true,
+        roundPixels: true,
+        antialias: false,
+        crisp: true,
+        scale: {
+          mode: Phaser.Scale.RESIZE,
+          width: window.innerWidth,
+          height: window.innerHeight,
+          autoCenter: Phaser.Scale.CENTER_BOTH,
+          expandParent: true,
+          autoRound: true
+        },
+        scene: [MainMenuBackground, StageBackground, VillageBackground],
         physics: {
           default: "arcade",
           arcade: {
@@ -30,6 +43,15 @@ const useGameStore = create((set, get) => ({
 
       game.scene.start('MainMenuBackground');
 
+      // Handle resize events at the game level
+      window.addEventListener('resize', () => {
+        game.scale.resize(window.innerWidth, window.innerHeight);
+      });
+
+      window.addEventListener('fullscreenchange', () => {
+        game.scale.resize(window.innerWidth, window.innerHeight);
+      });
+
       game.events.once('ready', () => {
         set({ isLoaded: true });
       });
@@ -37,8 +59,14 @@ const useGameStore = create((set, get) => ({
       game.events.on('changeScene', (sceneName, sceneData) => {
         const currentScene = get().currentScene;
         game.scene.stop(currentScene);
-        game.scene.start(sceneName, sceneData);
-        set({ currentScene: sceneName });
+        
+        if (sceneData?.name === 'Village') {
+          game.scene.start('VillageBackground');
+          set({ currentScene: 'VillageBackground' });
+        } else {
+          game.scene.start(sceneName, sceneData);
+          set({ currentScene: sceneName });
+        }
       });
 
       set({ game });
@@ -48,6 +76,9 @@ const useGameStore = create((set, get) => ({
   destroyGame: () => {
     const game = get().game;
     if (game) {
+      // Remove event listeners
+      window.removeEventListener('resize', () => {});
+      window.removeEventListener('fullscreenchange', () => {});
       game.destroy(true);
       set({ game: null, isLoaded: false });
     }

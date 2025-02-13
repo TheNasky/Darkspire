@@ -1,17 +1,19 @@
 import { create } from 'zustand';
 
-const useGameStore = create((set) => ({
+const useCharacterStore = create((set) => ({
   characterCreation: {
     selectedClassId: null,
     colorSchemes: {},
     stats: null,
   },
+  currentCharacter: null,
   setCharacterCreation: (data) => set((state) => ({
     characterCreation: {
       ...state.characterCreation,
       ...data
     }
   })),
+  setCurrentCharacter: (character) => set({ currentCharacter: character }),
 }));
 
-export default useGameStore;
+export default useCharacterStore;

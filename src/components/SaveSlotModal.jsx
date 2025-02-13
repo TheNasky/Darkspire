@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import ConfirmationModal from "./ConfirmationModal";
 import useGameStore from "../store/gameStore";
 import { characterService } from '../services/characterService';
+import useCharacterStore from "../store/characterStore";
+import { checkConnection } from "../utils/connectionUtils";
 
 export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "load" }) {
   if (!isOpen) return null;
@@ -16,17 +18,33 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
   const getSaves = useSaveStore((state) => state.getSaves);
   const [characters, setCharacters] = useState([]);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
 
   const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, slot: null });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setIsLoading(true);
+        setError("");
+        
+        const connectionStatus = await checkConnection();
+        if (!connectionStatus.ok) {
+          setError("Unable to connect to server. Please check your internet connection.");
+          setIsConnected(false);
+          return;
+        }
+
+        setIsConnected(true);
         const response = await characterService.getCharacters();
         setCharacters(response.payload || []);
       } catch (error) {
         setError(error.message || "Failed to fetch characters");
+        setIsConnected(false);
         console.error("Error fetching characters:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -94,21 +112,34 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
   };
 
   const handleSlotSelect = (slot) => {
+    if (!isConnected) {
+      setError("Cannot create or load characters while offline");
+      return;
+    }
     onClose();
     
     const game = useGameStore.getState().game;
     
-    if (slot.character && game) {
-      game.events.emit('changeScene', 'StageBackground', { 
-        biome: 'FOREST',
-        stage: {
-          name: 'Tutorial',
-          gridSize: { rows: 5, cols: 5 },
-          character: slot.character,
-          enemies: [],
-          hazards: []
-        }
+    if (slot.character) {
+      // Store the selected character in characterStore
+      useCharacterStore.getState().setCurrentCharacter({
+        id: slot.character.id,
+        name: slot.character.name,
+        class: slot.character.class,
+        level: slot.character.level,
+        colorMap: getColorMap(slot.character),
+        // Add any other character data you need
       });
+
+      if (game) {
+        game.events.emit('changeScene', 'VillageBackground', { 
+          biome: 'FOREST2',
+          stage: {
+            name: 'forest2',
+            character: slot.character,
+          }
+        });
+      }
     } else {
       onSelectSlot(slot);
     }
@@ -140,99 +171,111 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
             </button>
           </div>
 
-          <div className="space-y-4 lg:space-y-6">
-            {saveSlots.map((slot) => (
-              <motion.div
-                key={slot.id} 
-                onClick={(e) => handleSlotSelect(slot)}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                className="h-[7.5rem] lg:h-[12.5rem] relative w-full p-3 lg:p-6 bg-[#E6D5BC] rounded-xl border-2 border-[#2A160C]/20 
-                        hover:bg-[#D4C3AA] transition-all duration-200 group cursor-pointer justify-center"
-              >
-                {slot.character && (
-                  <button
-                    onClick={(e) => handleDelete(e, slot)}
-                    className="absolute top-2 right-2 w-6 h-6 lg:w-9 lg:h-9 rounded-full bg-red-500/10 
-                             hover:bg-red-500 text-red-500 hover:text-white flex items-center justify-center text-center
-                             transition-all duration-200 lg:opacity-0 lg:group-hover:opacity-100 p-2"
-                  >
-                    <div className="text-center relative left-[0.05rem] lg:top-[0.1rem] text-xs lg:text-xl">
-                    ×
-                    </div>
-                  </button>
-                )}
+          {error && (
+            <div className="mb-4 text-red-500 bg-red-500/10 px-4 py-2 rounded-lg text-center">
+              {error}
+            </div>
+          )}
 
-                <div className="flex items-center gap-3 lg:gap-6 py-2">
-                  {/* Left side - Character sprite and basic info */}
-                  <div className="flex-shrink-0 w-16 lg:w-32 text-center">
-                    {slot.character ? (
-                      <>
-                        <div className="h-16 lg:h-32 flex items-center justify-center bg-[#2A160C]/5 rounded-lg overflow-hidden group-hover:bg-[#2A160C]/10 transition-colors duration-200">
-                          <div className="scale-100 group-hover:scale-110 transition-transform duration-200">
-                            <CharacterSprite
-                              characterId={slot.character.id}
-                              action="idle"
-                              size="15rem"
-                              colorMap={getColorMap(slot.character)}
-                            />
-                          </div>
-                        </div>
-                        <div className="mt-2 text-[#2A160C] font-medium text-[0.45rem] lg:text-[1.1rem]">
-                          {slot.character.name}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="h-16 lg:h-32 flex items-center justify-center bg-[#2A160C]/5 rounded-lg group-hover:bg-[#2A160C]/10 transition-colors duration-200">
-                        <span className="text-[#8B4513]/50 text-2xl lg:text-5xl">?</span>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2A160C]"></div>
+            </div>
+          ) : (
+            <div className="space-y-4 lg:space-y-6">
+              {saveSlots.map((slot) => (
+                <motion.div
+                  key={slot.id} 
+                  onClick={(e) => handleSlotSelect(slot)}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  className={`h-[7.5rem] lg:h-[12.5rem] relative w-full p-3 lg:p-6 bg-[#E6D5BC] rounded-xl border-2 border-[#2A160C]/20 
+                          hover:bg-[#D4C3AA] transition-all duration-200 group cursor-pointer justify-center ${!isConnected && !slot.character ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {slot.character && (
+                    <button
+                      onClick={(e) => handleDelete(e, slot)}
+                      className="absolute top-2 right-2 w-6 h-6 lg:w-9 lg:h-9 rounded-full bg-red-500/10 
+                               hover:bg-red-500 text-red-500 hover:text-white flex items-center justify-center text-center
+                               transition-all duration-200 lg:opacity-0 lg:group-hover:opacity-100 p-2"
+                    >
+                      <div className="text-center relative left-[0.05rem] lg:top-[0.1rem] text-xs lg:text-xl">
+                      ×
                       </div>
-                    )}
-                  </div>
+                    </button>
+                  )}
 
-                  {/* Right side - Save info and character details */}
-                  <div className="flex-grow">
-                    <div className="flex flex-col gap-2 lg:gap-3 text-center">
-                      <span className="text-[#2A160C] font-bold text-[0.6rem] lg:text-[1.2rem]">
-                        {slot.name}
-                      </span>
-
+                  <div className="flex items-center gap-3 lg:gap-6 py-2">
+                    {/* Left side - Character sprite and basic info */}
+                    <div className="flex-shrink-0 w-16 lg:w-32 text-center">
                       {slot.character ? (
                         <>
-                          {slot.playTime && (
-                            <span className="text-[#8B4513] text-[0.4rem] lg:text-[0.9rem]">
-                              Play Time:{" "}
-                              <span className="text-[#2A160C] font-medium">{slot.playTime}</span>
-                            </span>
-                          )}
-                          <div className="flex items-center justify-center gap-4 text-[0.4rem] lg:text-[0.9rem]">
-                            <span className="text-[#8B4513]">
-                              Level:{" "}
-                              <span className="text-[#2A160C] font-medium">
-                                {slot.character.level}
-                              </span>
-                            </span>
-                            <span className="text-[#8B4513] font-medium">
-                              {slot.character.class}
-                            </span>
+                          <div className="h-16 lg:h-32 flex items-center justify-center bg-[#2A160C]/5 rounded-lg overflow-hidden group-hover:bg-[#2A160C]/10 transition-colors duration-200">
+                            <div className="scale-100 group-hover:scale-110 transition-transform duration-200">
+                              <CharacterSprite
+                                characterId={slot.character.id}
+                                action="idle"
+                                size="15rem"
+                                colorMap={getColorMap(slot.character)}
+                              />
+                            </div>
                           </div>
-                          <span className="text-[#8B4513] text-[0.4rem] lg:text-[0.9rem]">
-                            Location:{" "}
-                            <span className="text-[#2A160C] font-medium">
-                              {slot.character.location}
-                            </span>
-                          </span>
+                          <div className="mt-2 text-[#2A160C] font-medium text-[0.45rem] lg:text-[1.1rem]">
+                            {slot.character.name}
+                          </div>
                         </>
                       ) : (
-                        <span className="text-[#8B4513] text-[0.5rem] lg:text-[1rem] font-medium">
-                          START A NEW GAME
-                        </span>
+                        <div className="h-16 lg:h-32 flex items-center justify-center bg-[#2A160C]/5 rounded-lg group-hover:bg-[#2A160C]/10 transition-colors duration-200">
+                          <span className="text-[#8B4513]/50 text-2xl lg:text-5xl">?</span>
+                        </div>
                       )}
                     </div>
+
+                    {/* Right side - Save info and character details */}
+                    <div className="flex-grow">
+                      <div className="flex flex-col gap-2 lg:gap-3 text-center">
+                        <span className="text-[#2A160C] font-bold text-[0.6rem] lg:text-[1.2rem]">
+                          {slot.name}
+                        </span>
+
+                        {slot.character ? (
+                          <>
+                            {slot.playTime && (
+                              <span className="text-[#8B4513] text-[0.4rem] lg:text-[0.9rem]">
+                                Play Time:{" "}
+                                <span className="text-[#2A160C] font-medium">{slot.playTime}</span>
+                              </span>
+                            )}
+                            <div className="flex items-center justify-center gap-4 text-[0.4rem] lg:text-[0.9rem]">
+                              <span className="text-[#8B4513]">
+                                Level:{" "}
+                                <span className="text-[#2A160C] font-medium">
+                                  {slot.character.level}
+                                </span>
+                              </span>
+                              <span className="text-[#8B4513] font-medium">
+                                {slot.character.class}
+                              </span>
+                            </div>
+                            <span className="text-[#8B4513] text-[0.4rem] lg:text-[0.9rem]">
+                              Location:{" "}
+                              <span className="text-[#2A160C] font-medium">
+                                {slot.character.location}
+                              </span>
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-[#8B4513] text-[0.5rem] lg:text-[1rem] font-medium">
+                            START A NEW GAME
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </motion.div>
       </motion.div>
 
@@ -241,7 +284,8 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
         onClose={() => setDeleteConfirmation({ isOpen: false, slot: null })}
         onConfirm={handleConfirmDelete}
         title="Delete Character"
-        message="This action cannot be undone. Please type the character's name to confirm deletion."
+        message={`This action cannot be undone. Please type the character's name to confirm deletion: ${deleteConfirmation.slot?.character?.name}`}
+        highlights={deleteConfirmation.slot?.character?.name}
         confirmationName={deleteConfirmation.slot?.character?.name}
       />
     </>

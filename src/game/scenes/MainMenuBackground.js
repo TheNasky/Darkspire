@@ -10,7 +10,6 @@ export default class MainMenuBackground extends Phaser.Scene {
     this.load.on('loaderror', (fileObj) => {
       console.error('Error loading asset:', fileObj.src);
     });
-
     // Load layers from farthest to closest
     const layers = [
       { key: 'sky', path: '/assets/background/MoonMountains/sky.png' },
@@ -22,59 +21,76 @@ export default class MainMenuBackground extends Phaser.Scene {
     ];
 
     layers.forEach(({ key, path }) => {
-      console.log('Loading:', path);
       this.load.image(key, path);
     });
   }
 
   create() {
-    const scaleY = this.cameras.main.height;
-    const displayWidth = this.cameras.main.width;
-    
+    const screenWidth = this.cameras.main.width;
+    const screenHeight = this.cameras.main.height;
+
+    // Get reference dimensions from the sky texture
+    const skyTexture = this.textures.get('sky');
+    const baseWidth = skyTexture.source[0].width;
+    const baseHeight = skyTexture.source[0].height;
+
+    // Calculate base scale that maintains aspect ratio
+    const widthScale = screenWidth / baseWidth;
+    const heightScale = screenHeight / baseHeight;
+    const baseScale = Math.max(widthScale, heightScale);
+
+    // Base vertical offset
+    const baseYOffset = -screenHeight * 0.2;
+
     const layers = [
-      { key: 'sky', speed: 0.02 },
-      { key: 'far-clouds', speed: 0.1 },
-      { key: 'near-clouds', speed: 0.2 },
-      { key: 'far-mountains', speed: 0.3 },
-      { key: 'mountains', speed: 0.55 },
-      { key: 'trees', speed: 0.85 }
+      { key: 'sky', speed: 0.0, yOffsetMod: 0.1 },
+      { key: 'far-clouds', speed: 0.1, yOffsetMod: 0.07 },
+      { key: 'near-clouds', speed: 0.2, yOffsetMod: 0.06 },
+      { key: 'far-mountains', speed: 0.3, yOffsetMod: 0.05 }, // Move up a bit
+      { key: 'mountains', speed: 0.55, yOffsetMod: 0 }, // Move down
+      { key: 'trees', speed: 1.1, yOffsetMod: -0.05 } // Move up more
     ];
 
-    this.parallaxLayers = layers.map(({ key, speed }) => {
+    this.parallaxLayers = layers.map(({ key, speed, yOffsetMod }) => {
+      const yOffset = baseYOffset + (screenHeight * yOffsetMod);
+      
       const sprite = this.add.tileSprite(
         0,
-        0,
-        240,
-        240,
+        yOffset,
+        baseWidth,
+        baseHeight,
         key
       )
         .setOrigin(0, 0)
         .setScrollFactor(0)
-        .setScale(scaleY)
-        .setDisplaySize(displayWidth, this.cameras.main.height);
+        .setScale(baseScale);
+
+      // Set nearest-neighbor filtering for this sprite
+      sprite.setTexture(key, undefined, { pixelArt: true });
       
-      return { sprite, speed };
+      return { sprite, speed, yOffsetMod };
     });
 
     // Handle window resize
     const resize = () => {
-      const newHeight = window.innerHeight;
       const newWidth = window.innerWidth;
+      const newHeight = window.innerHeight;
       
-      // Update game scale
       this.scale.resize(newWidth, newHeight);
       
-      // Update each layer
-      this.parallaxLayers.forEach(({ sprite }) => {
-        const newScaleY = newHeight / 240;
-        sprite.setScale(newScaleY)
-          .setDisplaySize(newWidth, newHeight);
-        sprite.x = 0;
-        sprite.y = 0;
+      const newWidthScale = newWidth / baseWidth;
+      const newHeightScale = newHeight / baseHeight;
+      const newScale = Math.max(newWidthScale, newHeightScale);
+      
+      const newBaseYOffset = -newHeight * 0.2;
+      
+      this.parallaxLayers.forEach(({ sprite, yOffsetMod }) => {
+        const newYOffset = newBaseYOffset + (newHeight * yOffsetMod);
+        sprite.setScale(newScale);
+        sprite.y = newYOffset;
       });
     };
 
-    // Listen for both resize and fullscreenchange events
     window.addEventListener('resize', resize);
     window.addEventListener('fullscreenchange', resize);
     
