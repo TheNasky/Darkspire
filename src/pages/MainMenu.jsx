@@ -235,7 +235,7 @@ export default function MainMenu() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-32 left-0 right-0 mx-auto w-fit z-50 bg-red-900/80 text-red-100 px-6 py-3 rounded-lg text-sm font-medium border border-red-500/50 shadow-lg min-w-[320px] text-center pixel-font"
+                    className="absolute top-32 left-0 right-0 mx-auto w-fit z-50 bg-red-900/80 text-red-100 px-6 py-3 rounded-lg text-sm font-medium border border-red-500/50 shadow-lg min-w-[20rem] text-center pixel-font"
                   >
                     {error}
                   </motion.div>
@@ -262,7 +262,7 @@ export default function MainMenu() {
                   transition={{ duration: 1.5, delay: 0.5 }}
                 >
                   <div
-                    className={`bg-[#E6D5BC] p-8 py-4 rounded-xl border-2 border-[#2A160C] shadow-[0_0_20px_rgba(230,213,188,0.15)] opacity-95 ${
+                    className={`w-[30rem] bg-[#E6D5BC] p-8 py-4 rounded-xl border-2 border-[#2A160C] shadow-[0_0_20px_rgba(230,213,188,0.15)] opacity-95 ${
                       isLoginMode ? "pt-0" : ""
                     }`}
                   >
@@ -312,7 +312,6 @@ export default function MainMenu() {
                           value={formData.password}
                           className="hidden"
                         />
-
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm text-center text-[#8b4513] block font-medium tracking-wide">
