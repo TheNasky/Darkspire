@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import CharacterSprite from "../CharacterSprite";
 import { CHARACTER_CLASSES } from "../../constants/characters";
 import { CHARACTER_COLORS } from "../../constants/characterColors";
+import useGameStore from '../../store/characterStore';
 
 // Replace the static COLOR_OPTIONS with a function
 const getColorOptions = (selectedClass) => {
@@ -135,18 +136,14 @@ const ColorOption = ({ color, selected, onClick }) => (
   />
 );
 
-export default function CharacterCreationPanel({ selectedClass, setSelectedClass }) {
+export default function CharacterCreationPanel({ 
+  selectedClass, 
+  setSelectedClass, 
+  selectedColorScheme, 
+  setSelectedColorScheme 
+}) {
   const [currentPage, setCurrentPage] = useState(0);
   const [hoveredButtonId, setHoveredButtonId] = useState(null);
-  const [selectedColorScheme, setSelectedColorScheme] = useState(() => {
-    const schemes = {};
-    if (selectedClass?.spritesheet?.baseColors) {
-      Object.keys(selectedClass.spritesheet.baseColors).forEach(part => {
-        schemes[part] = "default";
-      });
-    }
-    return schemes;
-  });
 
   // Updated to match grid layout
   const classesPerPage = window.innerWidth >= 1024 ? 6 : 4;
@@ -213,16 +210,24 @@ export default function CharacterCreationPanel({ selectedClass, setSelectedClass
 
   // Update selectedColorScheme when character changes
   useEffect(() => {
-    setSelectedColorScheme(() => {
-      const newSchemes = {};
-      if (selectedClass?.spritesheet?.baseColors) {
-        Object.keys(selectedClass.spritesheet.baseColors).forEach(part => {
-          newSchemes[part] = "default";
-        });
-      }
-      return newSchemes;
-    });
-  }, [selectedClass]);
+    const newSchemes = {};
+    if (selectedClass?.spritesheet?.baseColors) {
+      Object.keys(selectedClass.spritesheet.baseColors).forEach(part => {
+        newSchemes[part] = "default";
+      });
+    }
+    setSelectedColorScheme(newSchemes);
+  }, [selectedClass, setSelectedColorScheme]);
+
+  // Add useEffect to update store whenever selectedClass or selectedColorScheme changes
+  useEffect(() => {
+    const data = {
+      selectedClassId: selectedClass.id,
+      colorSchemes: selectedColorScheme
+    };
+    useGameStore.getState().setCharacterCreation(data);
+    console.log('Character Creation Panel - Stored Data:', useGameStore.getState().characterCreation);
+  }, [selectedClass.id, selectedColorScheme]);
 
   return (
     <div className="flex flex-col lg:flex-row gap-2 lg:gap-6 h-full">
@@ -279,11 +284,11 @@ export default function CharacterCreationPanel({ selectedClass, setSelectedClass
       {/* Desktop Character Preview - Hidden on Mobile */}
       <div className="hidden lg:block lg:w-1/3 aspect-auto">
         <div className="h-full min-w-[23.5rem] bg-[#E6D5BC] rounded-xl border-2 border-[#2A160C]/20 flex items-center justify-center overflow-hidden">
-          <div className="relative bottom-0 lg:bottom-14 lg:right-3">
+          <div className="relative bottom-0 lg:bottom-14">
             <CharacterSprite
               characterId={selectedClass.id}
               action="idle"
-              size="45rem"
+              size="43rem"
               colorMap={getColorMap()}
             />
           </div>
@@ -331,7 +336,7 @@ export default function CharacterCreationPanel({ selectedClass, setSelectedClass
                   >
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div
-                        className={`scale-[0.5] lg:scale-[0.65] transition-transform duration-200 ${
+                        className={`scale-[0.5] lg:scale-[0.65] transition-transform duration-200 relative top-1 ${
                           selectedClass.id === characterClass.id ||
                           hoveredButtonId === characterClass.id
                             ? "scale-[0.55] lg:scale-[0.7]"
@@ -341,7 +346,7 @@ export default function CharacterCreationPanel({ selectedClass, setSelectedClass
                         <CharacterSprite
                           characterId={characterClass.id}
                           action="idle"
-                          size={window.innerWidth >= 1024 ? "18rem" : "32rem"}
+                          size={window.innerWidth >= 1024 ? "16rem" : "32rem"}
                           colorMap={
                             selectedClass.id === characterClass.id 
                               ? getColorMap()

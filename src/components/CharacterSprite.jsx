@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { getClassById } from "../constants/characters";
+import { getNpcById } from "../constants/npcs";
 
 // Global sprite cache
 const globalSpriteCache = {};
@@ -11,7 +12,8 @@ export default function CharacterSprite({
   size = "32px", 
   scale = 1, 
   colorMap = {},
-  isDisabled = false
+  isDisabled = false,
+  shadow = 1  // New prop: 0 = no shadow, 1 = large shadow, 2 = small shadow
 }) {
   const [currentFrame, setCurrentFrame] = useState(0);
   const animationRef = useRef(null);
@@ -33,7 +35,7 @@ export default function CharacterSprite({
   const containerSize = `${pixelSize}px`;
 
   const loadSpritesheet = () => {
-    const character = getClassById(characterId);
+    const character = getClassById(characterId) || getNpcById(characterId);
     if (!character?.spritesheet) return;
 
     const img = new Image();
@@ -109,7 +111,7 @@ export default function CharacterSprite({
   const animate = () => {
     if (isDisabled) return;
 
-    const character = getClassById(characterId);
+    const character = getClassById(characterId) || getNpcById(characterId);
     if (!character?.spritesheet?.animations[action]) return;
 
     const frameCount = character.spritesheet.animations[action].frameCount;
@@ -122,7 +124,7 @@ export default function CharacterSprite({
   }, [characterId, JSON.stringify(colorMap)]);
 
   useEffect(() => {
-    const character = getClassById(characterId);
+    const character = getClassById(characterId) || getNpcById(characterId);
     if (!character?.spritesheet?.animations[action]) return;
 
     if (isDisabled) {
@@ -139,8 +141,19 @@ export default function CharacterSprite({
   if (debug.loading) return <div className="text-white"></div>;
   if (debug.error) return <div className="text-red-500">Error: {debug.error}</div>;
 
-  const character = getClassById(characterId);
+  const character = getClassById(characterId) || getNpcById(characterId);
   const spriteScale = (pixelSize / 32) * scale * (character.spritesheet?.animations[action]?.scale || 1);
+
+  const getShadowClass = (shadowType) => {
+    switch(shadowType) {
+      case 1:
+        return "drop-shadow-[0_10px_4px_rgba(0,0,0,0.7)]";
+      case 2:
+        return "drop-shadow-[0px_2px_0.6px_rgba(0,0,0,0.65)]";
+      default:
+        return "";
+    }
+  };
 
   return (
     <div 
@@ -152,7 +165,7 @@ export default function CharacterSprite({
         justifyContent: 'center',
         position: 'relative'
       }}
-      className="drop-shadow-[0_10px_4px_rgba(0,0,0,0.7)]"
+      className={shadow === 1 ? getShadowClass(1) : ""}
     >
       <div
         style={{ 
@@ -171,6 +184,7 @@ export default function CharacterSprite({
           backgroundPositionX: `-${currentFrame * 32}px`,
           backgroundPositionY: `-${character.spritesheet.animations[action].row * 32}px`
         }}
+        className={shadow === 2 ? getShadowClass(2) : ""}
       />
     </div>
   );

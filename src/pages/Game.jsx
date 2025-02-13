@@ -1,43 +1,41 @@
-import { useEffect, useState } from "react";
-import Phaser from "phaser";
-import MainMenuBackground from "../game/scenes/MainMenuBackground";
+import { useEffect, useRef } from "react";
 import MainMenu from "./MainMenu";
+import Stage from "./Stage";
+import Village from "./Village";
+import useGameStore from "../store/gameStore";
 
 export default function Game() {
-  const [isLoaded, setIsLoaded] = useState(false);
+  const { initGame, destroyGame, isLoaded, currentScene } = useGameStore();
+  const initialized = useRef(false);
 
   useEffect(() => {
-    const config = {
-      type: Phaser.AUTO,
-      parent: "game-container",
-      width: window.innerWidth,
-      height: window.innerHeight,
-      backgroundColor: "#0A0B0F",
-      scene: [MainMenuBackground],
-      physics: {
-        default: "arcade",
-        arcade: {
-          gravity: { y: 0 },
-          debug: false,
-        },
-      },
-    };
-
-    const game = new Phaser.Game(config);
-
-    // Wait for the scene to be created before showing UI
-    game.events.once('ready', () => {
-      setIsLoaded(true);
-    });
+    if (!initialized.current) {
+      initGame();
+      initialized.current = true;
+    }
 
     return () => {
-      game.destroy(true);
+      destroyGame();
+      initialized.current = false;
     };
   }, []);
 
+  const renderUI = () => {
+    switch(currentScene) {
+      case 'MainMenuBackground':
+        return <MainMenu />;
+      case 'StageBackground':
+        return <Stage />;
+      case 'VillageBackground':
+        return <Village />;
+      default:
+        return <MainMenu />;
+    }
+  };
+
   return (
     <div id="game-container" className="fixed inset-0 overflow-hidden game-container">
-      {isLoaded && <MainMenu />}
+      {isLoaded && renderUI()}
     </div>
   );
 }
