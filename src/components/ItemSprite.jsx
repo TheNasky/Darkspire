@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 
 export default function ItemSprite({ 
-  spritesheet = '/assets/Weapons and Equipment/Raven.png',
+  spritesheet = '/assets/Items/Weapons and Equipment/Raven.png',
   row = 0,
   col = 0,
   size = '3rem',
-  opacity = 1
+  opacity = 1,
+  isIcon = false
 }) {
   const [spritesheetImage, setSpritesheetImage] = useState(null);
 
@@ -22,8 +23,9 @@ export default function ItemSprite({
       className="w-full h-full"
       style={{
         backgroundImage: `url(${spritesheetImage.src})`,
-        backgroundPosition: `-${col * 64}px -${row * 64}px`,
-        backgroundSize: '1024px 1024px',
+        backgroundPosition: isIcon ? 'center' : `-${col * 64}px -${row * 64}px`,
+        backgroundSize: isIcon ? 'contain' : '1024px 1024px',
+        backgroundRepeat: 'no-repeat',
         imageRendering: 'pixelated',
         opacity
       }}

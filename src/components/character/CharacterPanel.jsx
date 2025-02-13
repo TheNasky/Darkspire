@@ -1,19 +1,21 @@
 import { useState } from "react";
 import useCharacterStore from "../../store/characterStore";
 import CharacterSprite from "../CharacterSprite";
+import ItemSprite from "../ItemSprite";
 
 const EQUIPMENT_SLOTS = {
   // Left side slots
   HELMET: { id: "helmet", name: "Helmet", position: "left-top" },
   ARMOR: { id: "armor", name: "Armor", position: "left-middle" },
   BOOTS: { id: "boots", name: "Boots", position: "left-center" },
-  GLOVES: { id: "gloves", name: "Gloves", position: "left-bottom" },
-  BAG_1: { id: "bag_1", name: "Bag", position: "left-footer" },
-  BAG_2: { id: "bag_2", name: "Bag", position: "left-footer-2" },
+  AMULET: { id: "amulet", name: "Amulet", position: "left-bottom" },
+  RING_1: { id: "ring_1", name: "Ring", position: "left-footer" },
+  RING_2: { id: "ring_2", name: "Ring", position: "left-footer-2" },
   // Right side slots
-  AMULET: { id: "amulet", name: "Amulet", position: "right-top" },
-  RING_1: { id: "ring_1", name: "Ring", position: "right-middle" },
-  RING_2: { id: "ring_2", name: "Ring", position: "right-center" },
+  BAG_1: { id: "bag_1", name: "Bag", position: "right-top" },
+  BAG_2: { id: "bag_2", name: "Bag", position: "right-middle" },
+  BAG_3: { id: "bag_3", name: "Bag", position: "right-center" },
+
   // Bottom slots
   WEAPON_1: { id: "weapon_1", name: "Weapon", position: "bottom-left" },
   WEAPON_2: { id: "weapon_2", name: "Weapon", position: "bottom-right" },
@@ -66,14 +68,74 @@ export default function CharacterPanel() {
     }
   };
 
-  const renderEquipmentSlot = (slot) => (
-    <div
-      key={slot.id}
-      className={`absolute w-16 h-16 bg-[#2A160C]/10 rounded-lg border-2 border-[#2A160C]/20
-        hover:bg-[#2A160C]/15 transition-all duration-200 cursor-pointer
-        ${getSlotPosition(slot.position)}`}
-    ></div>
-  );
+  const renderEquipmentSlot = (slot) => {
+    let spritesheet = "/assets/Items/Weapons and Equipment/Raven.png";
+    let row = 5;
+    let col = 4;
+    let isIcon = false;
+
+    // Set specific sprites for equipment slots
+    switch (slot.id) {
+      case "weapon_1":
+        spritesheet = "/assets/Items/Weapons and Equipment/Equipment_07.png";
+        isIcon = true;
+        break;
+      case "weapon_2":
+        spritesheet = "/assets/Items/Weapons and Equipment/Shield_01.png";
+        isIcon = true;
+        break;
+      case "helmet":
+        spritesheet = "/assets/Items/Weapons and Equipment/Equipment_1807.png";
+        isIcon = true;
+        break;
+      case "armor":
+        spritesheet = "/assets/Items/Weapons and Equipment/Equipment_1823.png";
+        isIcon = true;
+        break;
+      case "boots":
+        spritesheet = "/assets/Items/Weapons and Equipment/Equipment_1839.png";
+        isIcon = true;
+        break;
+      case "bag_1":
+      case "bag_2":
+      case "bag_3":
+        spritesheet = "/assets/Items/Accesories/Bag_01.png";
+        isIcon = true;
+        break;
+      case "ring_1":
+      case "ring_2":
+        spritesheet = "/assets/Items/Accesories/Equipment_2218.png";
+        isIcon = true;
+        break;
+      case "amulet":
+        spritesheet = "/assets/Items/Accesories/Equipment_2222.png";
+        isIcon = true;
+        break;
+      default:
+        // Keep Raven spritesheet as default placeholder
+        break;
+    }
+
+    return (
+      <div
+        key={slot.id}
+        className={`absolute w-16 h-16 bg-[#2A160C]/10 rounded-lg border-2 border-[#2A160C]/20
+          hover:bg-[#2A160C]/15 transition-all duration-200 cursor-pointer
+          ${getSlotPosition(slot.position)}`}
+      >
+        <div className="w-full h-full opacity-40">
+          <ItemSprite
+            spritesheet={spritesheet}
+            row={row}
+            col={col}
+            size="4rem"
+            opacity={0.3}
+            isIcon={isIcon}
+          />
+        </div>
+      </div>
+    );
+  };
 
   const renderEquipmentTab = () => {
     if (!currentCharacter) {
@@ -89,12 +151,12 @@ export default function CharacterPanel() {
         {/* Equipment Section - 58% height */}
         <div className="h-[60%] relative bg-[#D4C3AA] border-2 border-[#2A160C]/20 p-[1rem] overflow-hidden">
           {/* Character Sprite */}
-          <div className="absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2">
+          <div className="absolute left-[53%] top-[38%] -translate-x-1/2 -translate-y-1/2">
             <div className="scale-x-[-1] overflow-hidden">
               <CharacterSprite
                 characterId={currentCharacter.id}
                 action="idle"
-                size="42rem"
+                size="40rem"
                 colorMap={currentCharacter.colorMap}
                 shadow={1}
               />
@@ -107,7 +169,9 @@ export default function CharacterPanel() {
 
         {/* Inventory Section - 42% height */}
         <div className="h-[40%] bg-[#D4C3AA] border-2 border-[#2A160C]/20 p-4 flex flex-col items-center">
-          <h3 className="text-[#2A160C] font-bold mb-3 font-pixel text-sm w-full">Inventory</h3>
+          <h3 className="text-[#2A160C] font-bold mb-3 font-pixel text-sm w-full">
+            Inventory
+          </h3>
           <div className="inline-grid grid-cols-8 grid-rows-4 overflow-hidden border-4 border-[#2A160C]/20 rounded-lg">
             {[...Array(32)].map((_, i) => (
               <div
