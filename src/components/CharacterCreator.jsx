@@ -17,7 +17,15 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
   const [successMessage, setSuccessMessage] = useState("");
   const characterData = useGameStore((state) => state.characterCreation);
   const [selectedClass, setSelectedClass] = useState(CHARACTER_CLASSES[0]);
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+
   const [selectedColorScheme, setSelectedColorScheme] = useState(() => {
+    
+    if (characterData.colorSchemes && Object.keys(characterData.colorSchemes).length > 0) {
+      return characterData.colorSchemes;
+    }
+
     const schemes = {};
     if (CHARACTER_CLASSES[0]?.spritesheet?.baseColors) {
       Object.keys(CHARACTER_CLASSES[0].spritesheet.baseColors).forEach(part => {
@@ -40,45 +48,61 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
 
   const addSave = useSaveStore((state) => state.addSave);
 
+  // Initialize only once when modal is first opened
   useEffect(() => {
-    if (isOpen) {
-      setStage(1);
-      setSelectedClass(CHARACTER_CLASSES[0]);
-      setSelectedColorScheme(() => {
+    if (isOpen && !isInitialized) {
+      const storedData = useGameStore.getState().characterCreation;
+      
+      // Set the initial class
+      const initialClass = storedData.selectedClassId 
+        ? CHARACTER_CLASSES.find(c => c.id === storedData.selectedClassId)
+        : CHARACTER_CLASSES[0];
+      setSelectedClass(initialClass);
+
+      // Set color schemes from store or initialize defaults
+      if (storedData.colorSchemes && Object.keys(storedData.colorSchemes).length > 0) {
+        setSelectedColorScheme(storedData.colorSchemes);
+      } else {
         const schemes = {};
-        if (CHARACTER_CLASSES[0]?.spritesheet?.baseColors) {
-          Object.keys(CHARACTER_CLASSES[0].spritesheet.baseColors).forEach(part => {
+        if (initialClass?.spritesheet?.baseColors) {
+          Object.keys(initialClass.spritesheet.baseColors).forEach(part => {
             schemes[part] = "default";
           });
         }
-        return schemes;
-      });
+        setSelectedColorScheme(schemes);
+      }
+
+      // Reset stats
       setStats(() => {
-        const selectedClass = CHARACTER_CLASSES.find(c => c.id === CHARACTER_CLASSES[0].id);
         const initialStats = {};
-        Object.entries(selectedClass.baseStats).forEach(([stat, value]) => {
+        Object.entries(initialClass.baseStats).forEach(([stat, value]) => {
           initialStats[stat] = value;
         });
         return initialStats;
       });
       setPointsRemaining(8);
+      
+      setIsInitialized(true);
+    }
+  }, [isOpen, isInitialized]);
+
+  // Reset initialization when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setIsInitialized(false);
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    setStats(() => {
-      const initialStats = {};
-      Object.entries(selectedClass.baseStats).forEach(([stat, value]) => {
-        initialStats[stat] = value;
-      });
-      return initialStats;
-    });
-    setPointsRemaining(8);
-  }, [selectedClass]);
-
   if (!isOpen) return null;
 
-  const handleStatChange = (stat, change) => {
+  const handleStatChange = (stat, change, newStats = null) => {
+    // If newStats is provided, it's a reset
+    if (newStats) {
+      setStats(newStats);
+      setPointsRemaining(8);
+      return;
+    }
+
     const newValue = stats[stat] + change;
     const baseValue = selectedClass.baseStats[stat];
     const minAllowed = Math.max(0, baseValue - 2);
@@ -112,7 +136,9 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
   };
 
   const handleBack = () => {
-    if (stage > 1) setStage((prev) => prev - 1);
+    if (stage > 1) {
+      setStage(prev => prev - 1);
+    }
   };
 
   const isCreateButtonDisabled = 
@@ -165,6 +191,41 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
     }
   };
 
+  const handleClose = () => {
+    // Reset store
+    useGameStore.getState().setCharacterCreation({
+      selectedClassId: null,
+      colorSchemes: {},
+      stats: null,
+      canProceed: false,
+      characterName: ''
+    });
+    
+    // Reset local state
+    setStage(1);
+    setSelectedClass(CHARACTER_CLASSES[0]);
+    setSelectedColorScheme(() => {
+      const schemes = {};
+      if (CHARACTER_CLASSES[0]?.spritesheet?.baseColors) {
+        Object.keys(CHARACTER_CLASSES[0].spritesheet.baseColors).forEach(part => {
+          schemes[part] = "default";
+        });
+      }
+      return schemes;
+    });
+    setStats(() => {
+      const initialStats = {};
+      Object.entries(CHARACTER_CLASSES[0].baseStats).forEach(([stat, value]) => {
+        initialStats[stat] = value;
+      });
+      return initialStats;
+    });
+    setPointsRemaining(8);
+    setIsInitialized(false);
+    
+    onClose();
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -203,7 +264,7 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
                   </h2>
                 </div>
                 <button
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="text-[#2A160C] hover:text-red-600 text-[1.2rem] lg:text-[2rem] font-bold"
                 >
                   ×
@@ -218,6 +279,8 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
                     setSelectedClass={setSelectedClass}
                     selectedColorScheme={selectedColorScheme}
                     setSelectedColorScheme={setSelectedColorScheme}
+                    setStats={setStats}
+                    setPointsRemaining={setPointsRemaining}
                   />
                 ) : stage === 2 ? (
                   <StatsSelection
@@ -236,7 +299,7 @@ export default function CharacterCreator({ isOpen, onClose, onSelect }) {
                 {/* Left button in its own container */}
                 <div className="w-[7rem] lg:w-[12rem]">
                   <button
-                    onClick={() => setStage((prev) => Math.max(1, prev - 1))}
+                    onClick={handleBack}
                     className={`px-1 lg:px-3 py-1.5 lg:py-2.5 rounded-lg text-[0.55rem] lg:text-[1rem] font-medium transition-all duration-200
                       ${stage === 1 
                         ? 'text-[#2A160C]/40 cursor-not-allowed' 

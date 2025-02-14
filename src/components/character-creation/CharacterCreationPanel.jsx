@@ -140,10 +140,14 @@ export default function CharacterCreationPanel({
   selectedClass, 
   setSelectedClass, 
   selectedColorScheme, 
-  setSelectedColorScheme 
+  setSelectedColorScheme,
+  setStats,
+  setPointsRemaining
 }) {
+
   const [currentPage, setCurrentPage] = useState(0);
   const [hoveredButtonId, setHoveredButtonId] = useState(null);
+  const [prevPage, setPrevPage] = useState(0);
 
   // Updated to match grid layout
   const classesPerPage = window.innerWidth >= 1024 ? 6 : 4;
@@ -154,10 +158,11 @@ export default function CharacterCreationPanel({
   );
 
   const handlePageChange = (direction) => {
+    setPrevPage(currentPage);  // Store the current page before changing it
     if (direction === "next" && currentPage < totalPages - 1) {
-      setCurrentPage((prev) => prev + 1);
+      setCurrentPage(prev => prev + 1);
     } else if (direction === "prev" && currentPage > 0) {
-      setCurrentPage((prev) => prev - 1);
+      setCurrentPage(prev => prev - 1);
     }
   };
 
@@ -208,16 +213,20 @@ export default function CharacterCreationPanel({
     return colorMap;
   };
 
-  // Update selectedColorScheme when character changes
+  // Instead, only initialize new color parts when class changes
   useEffect(() => {
-    const newSchemes = {};
-    if (selectedClass?.spritesheet?.baseColors) {
-      Object.keys(selectedClass.spritesheet.baseColors).forEach(part => {
-        newSchemes[part] = "default";
-      });
-    }
-    setSelectedColorScheme(newSchemes);
-  }, [selectedClass, setSelectedColorScheme]);
+    setSelectedColorScheme(prevSchemes => {
+      const newSchemes = { ...prevSchemes };
+      if (selectedClass?.spritesheet?.baseColors) {
+        Object.keys(selectedClass.spritesheet.baseColors).forEach(part => {
+          if (!newSchemes[part]) {
+            newSchemes[part] = "default";
+          }
+        });
+      }
+      return newSchemes;
+    });
+  }, [selectedClass]);
 
   // Add useEffect to update store whenever selectedClass or selectedColorScheme changes
   useEffect(() => {
@@ -226,8 +235,19 @@ export default function CharacterCreationPanel({
       colorSchemes: selectedColorScheme
     };
     useGameStore.getState().setCharacterCreation(data);
-    console.log('Character Creation Panel - Stored Data:', useGameStore.getState().characterCreation);
   }, [selectedClass.id, selectedColorScheme]);
+
+  const handleClassSelect = (characterClass) => {
+    setSelectedClass(characterClass);
+    
+    // Reset stats to the new class defaults
+    const initialStats = {};
+    Object.entries(characterClass.baseStats).forEach(([stat, value]) => {
+      initialStats[stat] = value;
+    });
+    setStats(initialStats);
+    setPointsRemaining(8);
+  };
 
   return (
     <div className="flex flex-col lg:flex-row gap-2 lg:gap-6 h-full">
@@ -303,12 +323,11 @@ export default function CharacterCreationPanel({
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentPage}
-                initial={{ opacity: 0, x: 50 }}
+                initial={{ opacity: 0, x: prevPage < currentPage ? 50 : -50 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -50 }}
-                transition={{ duration: 0.2 }}
+                exit={{ opacity: 0, x: prevPage < currentPage ? 150 : -150 }}
+                transition={{ duration: 0.3 }}
                 className="grid grid-cols-4 lg:grid-cols-6 gap-1.5 lg:gap-3 bg-[#E6D5BC] border border-[#2A160C]/20 rounded-lg lg:rounded-xl p-2 lg:p-4"
-                // style={{ minHeight: minGridHeight }}
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.2}
@@ -324,7 +343,7 @@ export default function CharacterCreationPanel({
                 {currentClasses.map((characterClass) => (
                   <button
                     key={characterClass.id}
-                    onClick={() => setSelectedClass(characterClass)}
+                    onClick={() => handleClassSelect(characterClass)}
                     onMouseEnter={() => setHoveredButtonId(characterClass.id)}
                     onMouseLeave={() => setHoveredButtonId(null)}
                     className={`relative aspect-square rounded-md lg:rounded-lg overflow-hidden transition-all duration-200
@@ -368,7 +387,14 @@ export default function CharacterCreationPanel({
               {Array.from({ length: totalPages }).map((_, index) => (
                 <button
                   key={index}
-                  onClick={() => setCurrentPage(index)}
+                  onClick={() => {
+                    setPrevPage(currentPage);
+                    if (index > currentPage) {
+                      handlePageChange("next");
+                    } else if (index < currentPage) {
+                      handlePageChange("prev");
+                    }
+                  }}
                   className={`w-6 h-1 rounded-full transition-all duration-200 my-2 lg:my-0 ${
                     currentPage === index 
                       ? "bg-[#2A160C] scale-110" 
