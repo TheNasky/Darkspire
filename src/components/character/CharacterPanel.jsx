@@ -2,6 +2,7 @@ import { useState } from "react";
 import useCharacterStore from "../../store/characterStore";
 import CharacterSprite from "../CharacterSprite";
 import ItemSprite from "../ItemSprite";
+import { CHARACTER_CLASSES } from "../../constants/characters";
 
 const EQUIPMENT_SLOTS = {
   // Left side slots
@@ -31,6 +32,26 @@ const TABS = {
 export default function CharacterPanel() {
   const [activeTab, setActiveTab] = useState(TABS.EQUIPMENT);
   const currentCharacter = useCharacterStore((state) => state.currentCharacter);
+
+  if (!currentCharacter) return null;
+
+  const getColorMap = () => {
+    if (!currentCharacter.customization?.colors) return {};
+
+    const colorMap = {};
+    Object.entries(currentCharacter.customization.colors).forEach(([part, colors]) => {
+      if (colors && colors.length > 0) {
+        // Assuming the base colors are stored somewhere
+        const baseColors = CHARACTER_CLASSES.find(c => c.id === currentCharacter.class)
+          ?.spritesheet?.baseColors[part] || [];
+        baseColors.forEach((baseColor, index) => {
+          colorMap[baseColor] = colors[index] || baseColor;
+        });
+      }
+    });
+
+    return colorMap;
+  };
 
   const getSlotPosition = (position) => {
     switch (position) {
@@ -138,14 +159,6 @@ export default function CharacterPanel() {
   };
 
   const renderEquipmentTab = () => {
-    if (!currentCharacter) {
-      return (
-        <div className="flex items-center justify-center h-full text-[#2A160C]/50 font-pixel">
-          No character loaded
-        </div>
-      );
-    }
-
     return (
       <div className="flex flex-col h-full">
         {/* Equipment Section - 58% height */}
@@ -154,10 +167,10 @@ export default function CharacterPanel() {
           <div className="absolute left-[53%] top-[38%] -translate-x-1/2 -translate-y-1/2">
             <div className="scale-x-[-1] overflow-hidden">
               <CharacterSprite
-                characterId={currentCharacter.id}
+                characterId={currentCharacter.class.toLowerCase()}
                 action="idle"
                 size="40rem"
-                colorMap={currentCharacter.colorMap}
+                colorMap={getColorMap()}
                 shadow={1}
               />
             </div>

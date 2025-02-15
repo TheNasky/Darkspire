@@ -54,13 +54,13 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
   }, [isOpen]);
 
   const getColorMap = (character) => {
-    if (!character) return {};
+    if (!character?.customization?.colors) return {};
 
-    const selectedClass = CHARACTER_CLASSES.find((c) => c.id === character.id);
+    const selectedClass = CHARACTER_CLASSES.find((c) => c.id === character.class.toLowerCase());
     if (!selectedClass?.spritesheet?.baseColors) return {};
 
     const colorMap = {};
-    Object.entries(character.colorSchemes).forEach(([part, colors]) => {
+    Object.entries(character.customization.colors).forEach(([part, colors]) => {
       if (colors && colors.length > 0) {
         const baseColors = selectedClass.spritesheet.baseColors[part] || [];
         baseColors.forEach((baseColor, index) => {
@@ -81,14 +81,15 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
       name: `SAVE FILE ${index + 1}`,
       playTime: null, // You might want to add this to your character data later
       character: character ? {
-        id: character.class, // This maps to the character class id for sprites
+        id: character._id,
+        userId: character.userId,
         name: character.name,
+        class: character.class,
         level: character.level,
-        class: CHARACTER_CLASSES.find(c => c.id === character.class)?.name || character.class,
-        location: "Tutorial Area",
-        colorSchemes: Object.fromEntries(
-          Object.entries(character.customization.colors).map(([part, colors]) => [part, colors])
-        )
+        experience: character.experience,
+        stats: character.stats,
+        customization: character.customization,
+        completedMainContracts: character.completedMainContracts
       } : null
     };
   });
@@ -121,15 +122,8 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
     const game = useGameStore.getState().game;
     
     if (slot.character) {
-      // Store the selected character in characterStore
-      useCharacterStore.getState().setCurrentCharacter({
-        id: slot.character.id,
-        name: slot.character.name,
-        class: slot.character.class,
-        level: slot.character.level,
-        colorMap: getColorMap(slot.character),
-        // Add any other character data you need
-      });
+      // Store the selected character in characterStore with the complete data structure
+      useCharacterStore.getState().setCurrentCharacter(slot.character);
 
       if (game) {
         game.events.emit('changeScene', 'VillageBackground', { 
@@ -213,7 +207,7 @@ export default function SaveSlotModal({ isOpen, onClose, onSelectSlot, mode = "l
                           <div className="h-16 lg:h-32 flex items-center justify-center bg-[#2A160C]/5 rounded-lg overflow-hidden group-hover:bg-[#2A160C]/10 transition-colors duration-200">
                             <div className="scale-100 group-hover:scale-110 transition-transform duration-200">
                               <CharacterSprite
-                                characterId={slot.character.id}
+                                characterId={slot.character.class.toLowerCase()}
                                 action="idle"
                                 size="15rem"
                                 colorMap={getColorMap(slot.character)}
