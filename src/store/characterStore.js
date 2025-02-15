@@ -13,7 +13,19 @@ const useCharacterStore = create((set) => ({
       ...data
     }
   })),
-  setCurrentCharacter: (character) => set({ currentCharacter: character }),
+  setCurrentCharacter: (character) => set({ 
+    currentCharacter: {
+      id:  character._id || character.id ,
+      userId: character.userId,
+      name: character.name,
+      class: character.class.toLowerCase(),
+      level: character.level,
+      experience: character.experience,
+      stats: character.stats,
+      customization: character.customization,
+      completedMainContracts: character.completedMainContracts
+    }
+  }),
 }));
 
 export default useCharacterStore;

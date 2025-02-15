@@ -46,7 +46,9 @@ html {
   scrollbar-width: thin;
   scrollbar-color: 	#623f2a #D4C3AA;
 }
-
+.noscroll{
+  scrollbar-width: none;
+}
 .pixel-art-font {
   font-family: 'Press Start 2P', cursive; /* or the chosen pixel art font */
   font-size: 16px; /* Adjust size as needed */

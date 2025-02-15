@@ -1,270 +1,485 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-
-const CONTRACT_TYPES = {
-  ALL: 'all',
-  MAIN: 'main',
-  EXPLORATION: 'exploration',
-  RAID: 'raid'
+import useCharacterStore from "../../store/characterStore";
+import { contractService } from "../../services/contractService";
+const BIOMES = {
+  FOREST: {
+    id: "forest",
+    name: "Forest",
+    icon: "🌲",
+    description: "A dense woodland teeming with wildlife and ancient mysteries.",
+  },
+  DESERT: {
+    id: "desert",
+    name: "Desert",
+    icon: "🏜️",
+    description: "Vast sandy expanses hiding ancient ruins and dangerous creatures.",
+  },
+  CAVE: {
+    id: "cave",
+    name: "Cave",
+    icon: "⛰️",
+    description:
+      "Dark underground networks filled with valuable minerals and lurking dangers.",
+  },
 };
 
-const SAMPLE_CONTRACTS = [
-  {
-    id: 1,
-    type: CONTRACT_TYPES.MAIN,
-    title: "The Dark Forest Menace",
-    description: "Clear the ancient forest of corrupted creatures threatening nearby villages.",
-    reward: { 
-      gold: 1000, 
-      exp: 500, 
-      items: ["Rare Potion", "Forest Medallion", "Ancient Scroll", "Magic Dust", "Dragon Scale"] 
-    },
-    level: 5,
-    difficulty: "Medium",
-    icon: "🌲"
-  },
-  {
-    id: 2,
-    type: CONTRACT_TYPES.EXPLORATION,
-    title: "Lost Library of Arcane",
-    description: "Explore the recently discovered ancient library and recover valuable tomes.",
-    reward: { gold: 800, exp: 400, items: ["Mysterious Scroll"] },
-    level: 3,
-    difficulty: "Easy",
-    expiresAt: Date.now() + 1000 * 60 * 60 * 48, // 48 hours from now
-    icon: "📚"
-  },
-  {
-    id: 3,
-    type: CONTRACT_TYPES.RAID,
-    title: "Dragon's Lair Assault",
-    description: "Lead a group of adventurers to clear out a dragon's lair. Time-sensitive mission!",
-    reward: { 
-      gold: 2000, 
-      exp: 1000, 
-      items: ["Dragon Scale", "Ancient Relic", "Mystic Gem"] 
-    },
-    level: 10,
-    difficulty: "Hard",
-    expiresAt: Date.now() + 1000 * 60 * 60 * 2, // 2 hours from now
-    icon: "🐉"
-  },
-  // Add more sample contracts...
-];
+const DIFFICULTY_COLORS = {
+  easy: "bg-emerald-500/20 text-emerald-700",
+  normal: "bg-blue-500/20 text-blue-700",
+  hard: "bg-amber-500/20 text-amber-700",
+  extreme: "bg-red-500/20 text-red-700",
+};
 
-function RewardsModal({ rewards, onClose }) {
+const CONTRACT_TYPE_COLORS = {
+  main: "bg-purple-500/20 text-purple-700",
+  adventure: "bg-blue-500/20 text-blue-700",
+  incursion: "bg-red-500/20 text-red-700",
+};
+
+const CONTRACT_FILTERS = {
+  ALL: "all",
+  MAIN: "main",
+  ADVENTURE: "adventure",
+  INCURSION: "incursion",
+};
+
+const CONTRACT_TYPES = {
+  main: { name: "Main Quest", color: "purple" },
+  adventure: { name: "Adventure", color: "blue" },
+  incursion: { name: "Incursion", color: "red" },
+};
+
+const OBJECTIVES = {
+  exploration: { name: "Exploration", icon: "🔍" },
+  hunt: { name: "Hunt", icon: "🏹" },
+  breach: { name: "Breach", icon: "🏴‍☠️" },
+  survival: { name: "Survival", icon: "⚔️" },
+};
+
+const LENGTHS = {
+  tiny: { name: "Tiny", duration: "5-10min" },
+  short: { name: "Short", duration: "10-20min" },
+  medium: { name: "Medium", duration: "20-30min" },
+  long: { name: "Long", duration: "30-45min" },
+  epic: { name: "Epic", duration: "45min+" },
+  one_shot: { name: "One Shot", duration: "15-20min" },
+};
+
+const CONTRACT_COLORS = {
+  main_quest: "text-amber-500 border-amber-500/50",
+  incursion: "text-red-500 border-red-500/50",
+  adventure: "text-emerald-500 border-emerald-500/50",
+};
+
+function BiomeSelector({ biomes, selectedBiome, onSelect, contracts }) {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        onClick={e => e.stopPropagation()}
-        className="bg-[#E6D5BC] rounded-lg w-[32rem] shadow-xl font-pixel"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b-2 border-[#2A160C]/10">
-          <h3 className="text-[#2A160C] text-[1.25rem]">Contract Rewards</h3>
-          <button 
-            onClick={onClose}
-            className="w-[2rem] h-[2rem] flex items-center justify-center rounded-lg
-                     text-[#2A160C]/60 hover:text-[#2A160C] hover:bg-[#2A160C]/10 transition-colors"
+    <div className="flex gap-2 overflow-x-auto pb-2">
+      {Object.values(biomes).map((biome) => {
+        const biomeContracts = contracts.filter(
+          (c) => c.biome?.toLowerCase() === biome.id.toLowerCase()
+        );
+        const hasMainQuest = biomeContracts.some(
+          (c) => c.type?.toLowerCase() === "main_quest"
+        );
+        const hasIncursion = biomeContracts.some((c) => c.type?.toLowerCase() === "incursion");
+
+        return (
+          <button
+            key={biome.id}
+            onClick={() => onSelect(biome)}
+            className={`flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all duration-200 ${
+              selectedBiome?.id === biome.id
+                ? "bg-[#2A160C] text-[#E6D5BC]"
+                : "bg-[#E6D5BC] text-[#2A160C] hover:bg-[#D4C3AA]"
+            }`}
           >
-            ×
+            <span className="text-[1.5rem] relative bottom-[0.3rem]">{biome.icon}</span>
+            <span className="font-medium">{biome.name}</span>
+            <div className="flex gap-1 font-bold">
+              {hasMainQuest && (
+                <span className="text-amber-500" title="Main Quest Available">
+                  !
+                </span>
+              )}
+              {hasIncursion && (
+                <span className="text-red-500" title="Incursion Available">
+                  !
+                </span>
+              )}
+            </div>
           </button>
-        </div>
-
-        <div className="p-4 space-y-6">
-          {/* Main Rewards */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-[#2A160C]/5 rounded-lg p-3 flex items-center gap-3">
-              <span className="text-[1.5rem]">💰</span>
-              <div>
-                <div className="text-[#8B4513] text-[1.25rem]">{rewards.gold}</div>
-                <div className="text-[#2A160C]/60 text-[0.875rem]">Gold</div>
-              </div>
-            </div>
-            <div className="bg-[#2A160C]/5 rounded-lg p-3 flex items-center gap-3">
-              <span className="text-[1.5rem]">✨</span>
-              <div>
-                <div className="text-[#8B4513] text-[1.25rem]">{rewards.exp}</div>
-                <div className="text-[#2A160C]/60 text-[0.875rem]">Experience</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Items */}
-          <div>
-            <h4 className="text-[#2A160C] mb-3 text-[1rem]">ITEMS ({rewards.items.length})</h4>
-            <div className="space-y-2">
-              {rewards.items.map((item, index) => (
-                <div 
-                  key={index} 
-                  className="bg-[#2A160C]/5 p-3 rounded-lg flex items-center gap-3"
-                >
-                  <span className="text-[1.25rem]">🎁</span>
-                  <span className="text-[#8B4513] text-[1rem]">{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
+        );
+      })}
+    </div>
   );
 }
 
-export default function JobBoard() {
-  const [selectedType, setSelectedType] = useState(CONTRACT_TYPES.ALL);
-  const [showRewardsFor, setShowRewardsFor] = useState(null);
-  const [timers, setTimers] = useState({});
+function ContractCard({ contract, isExpanded, onToggle, onAccept }) {
+  const contractRef = useRef(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState(null);
+  const contractType = contract.type?.toLowerCase();
+  const difficulties = contract.difficulties;
 
-  // Timer display component to prevent card reanimation
-  const Timer = ({ contractId, expiresAt }) => {
-    const [timeLeft, setTimeLeft] = useState('');
+  // When expanded, wait 300ms before scrolling into view
+  useEffect(() => {
+    if (isExpanded && contractRef.current) {
+      setTimeout(() => {
+        contractRef.current.scrollIntoView();
+      }, 75);
+    }
+  }, [isExpanded]);
 
-    useEffect(() => {
-      const updateTimer = () => {
-        const remaining = Math.max(0, expiresAt - Date.now());
-        const hours = Math.floor(remaining / (1000 * 60 * 60));
-        const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-        setTimeLeft(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-      };
-
-      updateTimer();
-      const interval = setInterval(updateTimer, 1000);
-      return () => clearInterval(interval);
-    }, [expiresAt]);
-
-    return (
-      <div className="text-[#8B0000] text-[0.875rem] font-medium">
-        Expires in: {timeLeft}
-      </div>
-    );
-  };
-
-  const QuestCard = ({ contract }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ 
-        opacity: 1, 
-        y: 0,
-        transition: {
-          duration: 0.5,
-          ease: "easeInOut"
-        }
-      }}
-      className="group"
+  return (
+    <div
+      ref={contractRef}
+      className="bg-[#E6D5BC] rounded-lg border-2 border-[#2A160C]/20 overflow-hidden"
     >
-      <div className="bg-[#E6D5BC] rounded-lg border-2 border-[#2A160C]/20 p-[1.5rem]
-                   group-hover:bg-[#D4C3AA] group-hover:scale-[102%] transition-all duration-200 transform-gpu ">
-        <div className="flex flex-col gap-4">
-          {/* Header */}
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-4">
-              <span className="text-[2.5rem]">{contract.icon}</span>
+      <button
+        onClick={onToggle}
+        className="w-full p-4 text-left hover:bg-[#D4C3AA] transition-all duration-200"
+      >
+        <div className="flex items-center gap-4">
+          <span className="text-2xl">
+            {OBJECTIVES[contract.objective?.toLowerCase()]?.icon || "📜"}
+          </span>
+
+          <div className="flex-1">
+            <div className="flex justify-between items-center">
               <div>
-                <h3 className="text-[#2A160C] font-bold text-[1.25rem]">{contract.title}</h3>
-                <div className="flex gap-2 mt-1">
-                  <span className="px-2 py-1 rounded bg-[#2A160C]/10 text-[#8B4513] text-[0.75rem]">
-                    Lvl {contract.level}
+                <h3 className="font-bold text-[#2A160C]">{contract.name}</h3>
+                <div className="flex items-center gap-2 text-xs text-[#8B4513] mt-1">
+                  <span className={CONTRACT_COLORS[contractType]?.split(" ")[0]}>
+                    {contractType === "main_quest"
+                      ? "Main Quest"
+                      : contractType === "incursion"
+                      ? "Incursion"
+                      : "Adventure"}
                   </span>
-                  <span className={`px-2 py-1 rounded text-[0.75rem] ${
-                    contract.type === CONTRACT_TYPES.MAIN 
-                      ? 'bg-[#FFD700]/20 text-[#B8860B]'
-                      : contract.type === CONTRACT_TYPES.EXPLORATION
-                        ? 'bg-[#98FB98]/20 text-[#228B22]'
-                        : 'bg-[#FF4500]/20 text-[#8B0000]'
-                  }`}>
-                    {contract.type.charAt(0).toUpperCase() + contract.type.slice(1)}
+                  <span>•</span>
+                  <span className="flex items-center gap-1">
+                    {OBJECTIVES[contract.objective?.toLowerCase()]?.name || contract.objective}
                   </span>
-                  <span className="px-2 py-1 rounded bg-[#2A160C]/10 text-[#8B4513] text-[0.75rem]">
-                    ⚔️ {contract.difficulty}
+                  <span>•</span>
+                  <span>
+                    {LENGTHS[contract.length?.toLowerCase()]?.name || 
+                     (contract.length?.charAt(0) + contract.length?.slice(1).toLowerCase())}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <div className="text-sm text-[#8B4513]">
+                    Level{" "}
+                    <span className="font-medium text-[#2A160C]">{contract.level || 1}</span>
+                  </div>
+                </div>
+                <motion.span
+                  className="text-[#2A160C] text-sm"
+                  animate={{ rotate: isExpanded ? 180 : 0 }}
+                  transition={{ duration: 0.002, ease: "easeInOut" }}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    className="w-[1rem] h-[1rem]"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </motion.span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </button>
+
+      {isExpanded && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.05, ease: "easeInOut" }}
+          className="px-4 pb-4 border-t border-[#2A160C]/10"
+        >
+          {/* Contract Details Section */}
+          <p className="text-[#8B4513] text-sm mt-4 mb-6">{contract.description}</p>
+
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-medium text-[#2A160C] mb-2">Rewards</h4>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-yellow-500">🪙</span>
+                  <span className="text-[#2A160C]">{contract.rewards?.gold || 0} Gold</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-blue-500">✨</span>
+                  <span className="text-[#2A160C]">
+                    {contract.rewards?.experience || 0} XP
                   </span>
                 </div>
               </div>
             </div>
-            {contract.type === CONTRACT_TYPES.RAID && (
-              <Timer contractId={contract.id} expiresAt={contract.expiresAt} />
-            )}
-          </div>
 
-          {/* Description */}
-          <p className="text-[#8B4513] text-[0.875rem]">{contract.description}</p>
+            <div>
+              <h4 className="font-medium text-[#2A160C] mb-2">Select Difficulty</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {difficulties.map((difficulty) => (
+                  <button
+                    key={difficulty}
+                    onClick={() => setSelectedDifficulty(difficulty)}
+                    className={`p-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                      selectedDifficulty === difficulty
+                        ? "bg-[#2A160C] text-[#E6D5BC]"
+                        : "bg-[#2A160C]/10 text-[#2A160C] hover:bg-[#2A160C]/20"
+                    }`}
+                  >
+                    {difficulty.replace('_', ' ').charAt(0) + 
+                     difficulty.replace('_', ' ').slice(1).toLowerCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 mt-2 pt-4 border-t border-[#2A160C]/10">
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowRewardsFor(contract);
-              }}
-              className="px-4 py-2 bg-[#2A160C]/10 hover:bg-[#2A160C]/20 text-[#2A160C] 
-                       rounded-lg transition-colors duration-200 text-[0.875rem] font-medium"
-            >
-              View Rewards
-            </button>
-            <button 
-              className="px-4 py-2 bg-[#2A160C] hover:bg-[#2A160C]/80 text-[#E6D5BC] 
-                       rounded-lg transition-colors duration-200 text-[0.875rem] font-medium"
+            <button
+              onClick={() => selectedDifficulty && onAccept(selectedDifficulty)}
+              disabled={!selectedDifficulty}
+              className={`w-full p-3 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                selectedDifficulty
+                  ? "bg-[#2A160C] text-[#E6D5BC] hover:bg-[#2A160C]/80"
+                  : "bg-[#2A160C]/20 text-[#2A160C]/40 cursor-not-allowed"
+              }`}
             >
               Accept Contract
             </button>
           </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-
-  return (
-    <div className="h-full flex flex-col p-6 pr-3">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-[#2A160C]">Available Contracts</h2>
-        <div className="flex gap-2">
-          {Object.values(CONTRACT_TYPES).map((type) => (
-            <button
-              key={type}
-              onClick={() => setSelectedType(type)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                selectedType === type
-                  ? 'bg-[#2A160C] text-[#E6D5BC]'
-                  : 'bg-[#2A160C]/10 text-[#2A160C] hover:bg-[#2A160C]/20'
-              }`}
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Contracts List */}
-      <div className="space-y-4  flex-1 pr-2">
-        <AnimatePresence mode="popLayout" presenceAffectsLayout={false}>
-          {SAMPLE_CONTRACTS
-            .filter(contract => selectedType === CONTRACT_TYPES.ALL || selectedType === contract.type)
-            .map((contract) => (
-              <QuestCard key={contract.id} contract={contract} />
-            ))}
-        </AnimatePresence>
-      </div>
-
-      {/* Rewards Modal */}
-      <AnimatePresence>
-        {showRewardsFor && (
-          <RewardsModal 
-            rewards={showRewardsFor.reward} 
-            onClose={() => setShowRewardsFor(null)} 
-          />
-        )}
-      </AnimatePresence>
+        </motion.div>
+      )}
     </div>
   );
-} 
+}
+
+function ContractResetTimer() {
+  const [timeLeft, setTimeLeft] = useState("");
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const now = new Date();
+      const nextHour = new Date(now);
+      nextHour.setHours(nextHour.getHours() + 1);
+      nextHour.setMinutes(0);
+      nextHour.setSeconds(0);
+
+      const diff = nextHour - now;
+      const minutes = Math.floor((diff / 1000 / 60) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+
+      setTimeLeft(`${minutes}m ${seconds}s`);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex items-center gap-2 text-sm bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg w-fit">
+      <span className="pixel-font text-lg">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          className="w-[1rem] h-[1rem] lg:w-[1.3rem] lg:h-[1.3rem] relative bottom-[0.05rem]"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2.3}
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          />
+        </svg>
+      </span>
+      <span className="font-medium text-center text-md">{timeLeft}</span>
+    </div>
+  );
+}
+
+export default function JobBoard() {
+  const [selectedBiome, setSelectedBiome] = useState(null);
+  const [selectedContract, setSelectedContract] = useState(null);
+  const [contracts, setContracts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const currentCharacter = useCharacterStore((state) => state.currentCharacter);
+
+  // Add these new state variables and functions
+  const [isDragging, setIsDragging] = useState(false);
+  const [startY, setStartY] = useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
+  const contractsRef = useRef(null);
+
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setStartY(e.pageY - contractsRef.current.offsetTop);
+    setScrollTop(contractsRef.current.scrollTop);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const y = e.pageY - contractsRef.current.offsetTop;
+    const walk = (y - startY) * 1.5;
+    contractsRef.current.scrollTop = scrollTop - walk;
+  };
+
+  useEffect(() => {
+    const fetchContracts = async () => {
+      if (!currentCharacter?.id) {
+        console.log("No character ID found!");
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await contractService.getContracts(currentCharacter.id);
+
+        console.log("Contract response:", response);
+
+        if (response.success) {
+          if (!response.payload) {
+            console.error("No payload in response");
+            setError("Invalid response format");
+            return;
+          }
+
+          // Flatten the nested contract structure
+          const flattenedContracts = [];
+          Object.values(response.payload).forEach((biomeContracts) => {
+            // If the biomeContracts is an object with numeric keys, extract those contracts
+            Object.entries(biomeContracts).forEach(([key, contract]) => {
+              if (!isNaN(key) && typeof contract === "object") {
+                flattenedContracts.push({
+                  ...contract,
+                  biome: contract.biome || "forest",
+                });
+              }
+            });
+          });
+
+          console.log("Processed contracts:", flattenedContracts);
+          setContracts(flattenedContracts);
+
+          // Set initial biome if we have contracts
+          if (flattenedContracts.length > 0) {
+            setSelectedBiome(BIOMES.FOREST);
+          }
+        } else {
+          setError(response.message || "Failed to fetch contracts");
+        }
+      } catch (error) {
+        console.error("Error fetching contracts:", error);
+        setError("An error occurred while fetching contracts.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchContracts();
+  }, [currentCharacter?.id]);
+
+  return (
+    <div className="h-full flex flex-col p-6 bg-[#2A160C]/5">
+      <div className="flex gap-6 mb-6">
+        {/* Job Board Header Section */}
+        <div className="w-64 h-64 bg-[#E6D5BC] rounded-lg border-2 border-[#2A160C]/20 overflow-hidden">
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-[12rem] relative bottom-8">📜</span>
+          </div>
+        </div>
+
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-[#2A160C] ">Job Board</h2>
+            <ContractResetTimer />
+          </div>
+
+          <p className="text-[#8B4513] mb-6">
+            Take on contracts to earn rewards and build your reputation. Choose wisely,
+            adventurer!
+          </p>
+
+          <BiomeSelector
+            biomes={BIOMES}
+            selectedBiome={selectedBiome}
+            onSelect={setSelectedBiome}
+            contracts={contracts}
+          />
+        </div>
+      </div>
+
+      {/* Contracts Section */}
+      <div className="flex-1 bg-[#D4C3AA] border-2 border-[#2A160C]/20 p-4 rounded-lg overflow-hidden">
+        {!loading && !error}
+        {loading ? (
+          <div className="flex items-center justify-center h-full text-[#8B4513]">
+            Loading contracts...
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center h-full text-red-500">{error}</div>
+        ) : (
+          <div 
+            ref={contractsRef}
+            className="space-y-2 h-full overflow-y-auto noscroll cursor-grab active:cursor-grabbing"
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onMouseMove={handleMouseMove}
+          >
+            {selectedBiome &&
+              Array.isArray(contracts) &&
+              contracts
+                .filter(
+                  (contract) =>
+                    contract.biome?.toUpperCase() === selectedBiome.id.toUpperCase()
+                )
+                .map((contract) => (
+                  <ContractCard
+                    key={contract._id}
+                    contract={contract}
+                    isExpanded={selectedContract?._id === contract._id}
+                    onToggle={() =>
+                      setSelectedContract(
+                        selectedContract?._id === contract._id ? null : contract
+                      )
+                    }
+                    onAccept={(difficulty) => {
+                      console.log(
+                        "Accepted contract:",
+                        contract._id,
+                        "with difficulty:",
+                        difficulty
+                      );
+                      setSelectedContract(null);
+                    }}
+                  />
+                ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

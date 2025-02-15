@@ -45,8 +45,8 @@ export default function StatsSelection({ stats, pointsRemaining, handleStatChang
             </div>
             <button
               onClick={handleReset}
-              className="flex items-center justify-center px-3 py-1 relative text-sm font-semibold text-[#2A160C] bg-[#ebdbc9] rounded-full
-                       hover:bg-[#cbbdad] transition-colors duration-200 border border-[#2A160C]/10 bottom-[0.05rem]"
+              className="flex items-center justify-center px-2 lg:px-3 py-0.5 lg:py-1 text-sm font-semibold text-[#2A160C] bg-[#ebdbc9] rounded-full
+                       hover:bg-[#cbbdad] transition-colors duration-200 border border-[#2A160C]/10 relative -bottom-0.5 lg:bottom-[0.05rem]"
               title="Reset stats"
             >
               <svg
@@ -54,7 +54,7 @@ export default function StatsSelection({ stats, pointsRemaining, handleStatChang
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                className="w-[1.28rem] h-[1.28rem]"
+                className="w-[1rem] h-[1rem] lg:w-[1.28rem] lg:h-[1.28rem]"
               >
                 <path
                   strokeLinecap="round"
