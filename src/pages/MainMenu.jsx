@@ -153,7 +153,7 @@ export default function MainMenu() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      console.log("User Data in Store:", useUserDataStore.getState());
+      console.log("User Authenticated");
     }
   }, [isAuthenticated]);
 

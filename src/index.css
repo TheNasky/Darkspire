@@ -84,3 +84,7 @@ img, svg {
   -o-user-select: none;
   user-select: none;
 }
+
+.glow-current {
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
+}
