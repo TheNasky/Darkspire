@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 
-export default function BattleGrid({ gridSize = { rows: 10, cols: 10 } }) {
+export default function BattleGrid({ gridSize = { rows: 10, cols: 10 }, children }) {
   const containerRef = useRef(null);
   const [cellSize, setCellSize] = useState(100);
   const [mounted, setMounted] = useState(false);
@@ -121,6 +121,11 @@ export default function BattleGrid({ gridSize = { rows: 10, cols: 10 } }) {
                 </div>
               ))
             )}
+
+            {/* Character Layer */}
+            <div className="absolute inset-0">
+              {children}
+            </div>
           </div>
         </div>
       </div>
