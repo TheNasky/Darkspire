@@ -1,352 +1,100 @@
-import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
+import { memo, useCallback, useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import useMapStore, {
+  selectGridNodes,
+  selectGridPaths,
+  selectCharacterPosition,
+} from "../../store/mapStore";
+import useCharacterStore from "../../store/characterStore";
+import { matchService } from "../../services/matchService";
 import { NODE_TYPES } from "../../constants/mapNodes";
 import CharacterSprite from "../CharacterSprite";
-import useMapStore from "../../store/mapStore"; // Import the map store
-import useCharacterStore from "../../store/characterStore";
-import useGameStore from "../../store/gameStore";
 import { CHARACTER_CLASSES } from "../../constants/characters";
-import { matchService } from "../../services/matchService";
+import { FaArrowUp, FaArrowDown, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import { toast } from "react-hot-toast";
-import { FaArrowUp, FaArrowDown, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 
-export default function MapView() {
-  // Store hooks
-  const mapData = useMapStore((state) => state.mapData);
-  const currentCharacter = useCharacterStore((state) => state.currentCharacter);
-  
-  // State hooks
-  const [hoveredNode, setHoveredNode] = useState(null);
-  const [isMoving, setIsMoving] = useState(false);
-  const [eventMessage, setEventMessage] = useState(null);
-  const [scale, setScale] = useState(1);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+const MIN_SCALE = 0.5;
+const MAX_SCALE = 2;
 
-  // Refs
-  const containerRef = useRef(null);
+// Memoized cell components
+const GridNode = memo(({ node, onCellClick, isCurrentPosition, onHover }) => {
+  const nodeDisplay = NODE_TYPES[node.type] || {
+    icon: "?",
+    label: "Unknown Node",
+    color: "gray",
+  };
 
-  // Derived state
-  const characterPosition = mapData?.match?.characterPositions?.find(
-    pos => pos.characterId === currentCharacter.id
-  )?.position;
+  if (!node.revealed) return null;
 
-  // Add viewport center tracking
-  const [viewportCenter, setViewportCenter] = useState({ x: 0, y: 0 });
-
-  // Callback hooks
-  const findTargetCell = useCallback((position) => {
-    if (!mapData?.grid) return null;
-    
-    const targetNode = mapData.grid.nodes.find(
-      node => node.position.x === position.x && 
-              node.position.y === position.y && 
-              node.revealed
-    );
-
-    const targetPath = mapData.grid.paths.find(
-      path => path.position.x === position.x && 
-              path.position.y === position.y && 
-              path.revealed
-    );
-
-    return targetNode || targetPath;
-  }, [mapData]);
-
-  const moveToAdjacentCell = useCallback(async (direction) => {
-    console.log('moveToAdjacentCell called with direction:', direction);
-    console.log('Current position:', characterPosition);
-    
-    if (!characterPosition || isMoving || !mapData?.match?._id) {
-      console.log('Movement blocked:', { 
-        noPosition: !characterPosition, 
-        isMoving,
-        noMatch: !mapData?.match?._id 
-      });
-      return;
-    }
-
-    const newPosition = { ...characterPosition };
-    switch (direction) {
-      case 'up': newPosition.y -= 1; break;
-      case 'down': newPosition.y += 1; break;
-      case 'left': newPosition.x -= 1; break;
-      case 'right': newPosition.x += 1; break;
-      default: return;
-    }
-
-    console.log('Attempting to move to:', newPosition);
-    const targetCell = findTargetCell(newPosition);
-    console.log('Target cell:', targetCell);
-
-    if (targetCell) {
-      try {
-        setIsMoving(true);
-        const response = await matchService.moveCharacter(
-          currentCharacter.id,
-          mapData.match._id,
-          newPosition
-        );
-
-        console.log('Move response:', response);
-
-        if (response.success) {
-          // Merge the existing map data with the new data
-          const updatedMapData = {
-            grid: {
-              ...response.payload.match.grid,
-              nodes: [
-                ...mapData.grid.nodes.map(node => ({
-                  ...node,
-                  completed: response.payload.match.grid.nodes.find(
-                    n => n.position.x === node.position.x && n.position.y === node.position.y
-                  )?.completed || node.completed
-                })),
-                ...response.payload.match.grid.nodes.filter(node => 
-                  !mapData.grid.nodes.some(
-                    n => n.position.x === node.position.x && n.position.y === node.position.y
-                  )
-                )
-              ],
-              paths: [
-                ...mapData.grid.paths.map(path => ({
-                  ...path,
-                  completed: response.payload.match.grid.paths.find(
-                    p => p.position.x === path.position.x && p.position.y === path.position.y
-                  )?.completed || path.completed
-                })),
-                ...response.payload.match.grid.paths.filter(path => 
-                  !mapData.grid.paths.some(
-                    p => p.position.x === path.position.x && p.position.y === path.position.y
-                  )
-                )
-              ]
-            },
-            match: {
-              ...response.payload.match,
-              grid: undefined // We'll use our merged grid instead
-            }
-          };
-
-          useMapStore.getState().setMapData(updatedMapData);
-
-          if (response.payload.event) {
-            setEventMessage({
-              ...response.payload.event,
-              position: newPosition
-            });
-            setTimeout(() => setEventMessage(null), 3000);
-          }
+  return (
+    <motion.div
+      className={`absolute w-[7rem] h-[7rem] -ml-2 -mt-2
+        ${node.completed ? "bg-[#1A1A1A] text-gray-500" : "bg-[#2A2A2A] text-white"}
+        rounded-lg shadow-lg 
+        ${
+          isCurrentPosition
+            ? "border-2 border-blue-600"
+            : node.completed
+            ? "border-[0.2rem] border-[#4a4a4a]"
+            : "border-4 border-white/70"
         }
-      } catch (error) {
-        console.error('Move error:', error);
-        toast.error(error.message || "Failed to move");
-      } finally {
-        setIsMoving(false);
-      }
-    } else {
-      console.log('No valid target cell found at position:', newPosition);
-    }
-  }, [characterPosition, isMoving, currentCharacter?.id, mapData, findTargetCell]);
+        flex items-center justify-center cursor-pointer
+        hover:bg-[#353535] transition-all duration-200`}
+      style={{
+        left: `${node.position.x * 6}rem`,
+        top: `${node.position.y * 6}rem`,
+        zIndex: 10,
+      }}
+      onClick={() => onCellClick(node)}
+      onMouseEnter={() => onHover(node)}
+      onMouseLeave={() => onHover(null)}
+      layoutId={`node-${node.position.x}-${node.position.y}`}
+    >
+      <div className="relative w-full h-full flex items-center justify-center text-5xl">
+        {nodeDisplay.icon}
+      </div>
+    </motion.div>
+  );
+});
 
-  const handleCellClick = useCallback(async (cell) => {
-    console.log('Cell clicked:', cell);
-    if (!cell.revealed || isMoving || !characterPosition) {
-      console.log('Click blocked:', { 
-        notRevealed: !cell.revealed, 
-        isMoving, 
-        noPosition: !characterPosition 
-      });
-      return;
-    }
+const GridPath = memo(({ path, onCellClick, isCurrentPosition, onHover }) => {
+  if (!path.revealed) return null;
 
-    const dx = cell.position.x - characterPosition.x;
-    const dy = cell.position.y - characterPosition.y;
-    
-    if (Math.abs(dx) + Math.abs(dy) !== 1) {
-      console.log('Not adjacent:', { dx, dy });
-      toast.error("You can only move to adjacent cells!");
-      return;
-    }
+  return (
+    <motion.div
+      className={`absolute w-[6rem] h-[6rem]
+        ${path.completed ? "bg-[#151515] text-gray-500" : "bg-[#1A1A1A] text-white"}
+        ${
+          isCurrentPosition
+            ? "border-2 border-blue-600"
+            : path.completed
+            ? "border-2 border-[#4a4a4a]"
+            : "border-2 border-white/70"
+        }
+        flex items-center justify-center cursor-pointer
+        hover:bg-[#252525] transition-all duration-200`}
+      style={{
+        left: `${path.position.x * 6}rem`,
+        top: `${path.position.y * 6}rem`,
+        zIndex: 5,
+      }}
+      onClick={() => onCellClick(path)}
+      onMouseEnter={() => onHover(path)}
+      onMouseLeave={() => onHover(null)}
+      layoutId={`path-${path.position.x}-${path.position.y}`}
+    />
+  );
+});
 
-    let direction;
-    if (dx === 1) direction = 'right';
-    else if (dx === -1) direction = 'left';
-    else if (dy === 1) direction = 'down';
-    else if (dy === -1) direction = 'up';
-
-    console.log('Moving in direction:', direction);
-    await moveToAdjacentCell(direction);
-  }, [characterPosition, isMoving, moveToAdjacentCell]);
-
-  // Effect hooks
-  useEffect(() => {
-    const handleKeyPress = (e) => {
-      switch (e.key.toLowerCase()) {
-        case 'w':
-        case 'arrowup':
-          moveToAdjacentCell('up');
-          break;
-        case 's':
-        case 'arrowdown':
-          moveToAdjacentCell('down');
-          break;
-        case 'a':
-        case 'arrowleft':
-          moveToAdjacentCell('left');
-          break;
-        case 'd':
-        case 'arrowright':
-          moveToAdjacentCell('right');
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [moveToAdjacentCell]);
-
-  const centerOnStart = useCallback(() => {
-    if (!mapData?.grid || !containerRef.current) return;
-
-    const startNode = mapData.grid.nodes.find((node) => node.type === "START");
-    if (!startNode) return;
-
-    const container = containerRef.current;
-    const containerWidth = container.clientWidth;
-    const containerHeight = container.clientHeight;
-
-    // Convert rem to pixels (assuming 1rem = 16px)
-    const remToPx = 16;
-    const gridCellSize = 6 * remToPx; // 6rem in pixels
-
-    // Calculate the position that will center the node
-    // We multiply the node position by gridCellSize to get its pixel position
-    const nodePixelX = startNode.position.x * gridCellSize;
-    const nodePixelY = startNode.position.y * gridCellSize;
-
-    // Center the node by taking half of the container size and subtracting the scaled node position
-    const centerX = (containerWidth / 2) - (nodePixelX * scale);
-    const centerY = (containerHeight / 2) - (nodePixelY * scale);
-
-    setPosition({
-      x: centerX,
-      y: centerY
-    });
-  }, [mapData, scale]);
-
-  // Replace the wheel effect with useLayoutEffect
-  useLayoutEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleWheel = (e) => {
-      e.preventDefault();
-      const zoomFactor = 0.1;
-      const direction = e.deltaY > 0 ? -1 : 1;
-      
-      // Get mouse position relative to container
-      const rect = container.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-
-      // Calculate new scale
-      const newScale = Math.min(
-        Math.max(scale * (1 + direction * zoomFactor), MIN_SCALE),
-        MAX_SCALE
-      );
-
-      // Calculate how much the content will change in size
-      const scaleDiff = newScale - scale;
-      
-      // Adjust position to zoom towards cursor
-      setPosition(prev => ({
-        x: prev.x - (mouseX - prev.x) * (scaleDiff / scale),
-        y: prev.y - (mouseY - prev.y) * (scaleDiff / scale),
-      }));
-      
-      setScale(newScale);
-    };
-
-    container.addEventListener("wheel", handleWheel, { passive: false });
-    return () => container.removeEventListener("wheel", handleWheel);
-  }, [containerRef.current, scale]); // Added scale as dependency
-
-  // Handle dragging
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (isDragging) {
-        setPosition((prev) => ({
-          x: prev.x + (e.clientX - dragStart.x),
-          y: prev.y + (e.clientY - dragStart.y),
-        }));
-        setDragStart({ x: e.clientX, y: e.clientY });
-      }
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    window.addEventListener("mouseleave", handleMouseUp);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-      window.removeEventListener("mouseleave", handleMouseUp);
-    };
-  }, [isDragging, dragStart]);
-
-  // Center on start node initially and handle spacebar
-  useEffect(() => {
-    centerOnStart();
-
-    const handleKeyPress = (e) => {
-      if (e.code === "Space") {
-        e.preventDefault();
-        centerOnStart();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [centerOnStart]);
-
-  // Update viewport center when character moves
-  useEffect(() => {
-    if (characterPosition && containerRef.current) {
-      const cellSize = 6; // size in rem
-      const containerWidth = containerRef.current.clientWidth;
-      const containerHeight = containerRef.current.clientHeight;
-      
-      // Convert rem to pixels for calculations
-      const remToPx = parseFloat(getComputedStyle(document.documentElement).fontSize);
-      const cellSizePx = cellSize * remToPx;
-
-      // Calculate center position
-      const newCenter = {
-        x: (containerWidth / 2) - (characterPosition.x * cellSizePx),
-        y: (containerHeight / 2) - (characterPosition.y * cellSizePx)
-      };
-
-      setViewportCenter(newCenter);
-      setPosition(newCenter);
-    }
-  }, [characterPosition]);
-
+const Character = memo(({ position, character, isMoving }) => {
   const getColorMap = () => {
-    if (!currentCharacter?.customization?.colors) return {};
+    if (!character?.customization?.colors) return {};
 
-    const selectedClass = CHARACTER_CLASSES.find(
-      (c) => c.id === currentCharacter.class
-    );
+    const selectedClass = CHARACTER_CLASSES.find((c) => c.id === character.class);
     if (!selectedClass?.spritesheet?.baseColors) return {};
 
     const colorMap = {};
-    Object.entries(currentCharacter.customization.colors).forEach(([part, colors]) => {
+    Object.entries(character.customization.colors).forEach(([part, colors]) => {
       if (colors && colors.length > 0) {
         const baseColors = selectedClass.spritesheet.baseColors[part] || [];
         baseColors.forEach((baseColor, index) => {
@@ -358,141 +106,308 @@ export default function MapView() {
     return colorMap;
   };
 
-  if (!mapData?.grid) {
-    return <div>Loading map...</div>; // Handle loading state
-  }
+  return (
+    <motion.div
+      className="absolute flex items-center justify-center scale-[300%]"
+      style={{
+        left: `${position.x * 6}rem`,
+        top: `${position.y * 6}rem`,
+        width: "6rem",
+        height: "6rem",
+        zIndex: 20,
+      }}
+    >
+      <div className="">😃</div>
+    </motion.div>
+  );
+});
 
-  const getNodeDisplay = (nodeType) => {
-    return (
-      NODE_TYPES[nodeType] || {
-        icon: "?",
-        label: "Unknown Node",
-        color: "gray",
+export default function MapView() {
+  // Store selectors
+  const gridNodes = useMapStore(selectGridNodes);
+  const gridPaths = useMapStore(selectGridPaths);
+  const characterPosition = useMapStore(selectCharacterPosition);
+  const mapData = useMapStore((state) => state.mapData);
+  const currentCharacter = useCharacterStore((state) => state.currentCharacter);
+
+  // State
+  const [hoveredNode, setHoveredNode] = useState(null);
+  const [isMoving, setIsMoving] = useState(false);
+  const [eventMessage, setEventMessage] = useState(null);
+  const [scale, setScale] = useState(0.7);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  // Refs
+  const containerRef = useRef(null);
+
+  // Add a ref to track the last character position for camera follow
+  const lastCharacterPosition = useRef(null);
+
+  const handleCellClick = useCallback(
+    async (cell) => {
+      if (!cell.revealed || isMoving || !characterPosition) return;
+
+      const dx = cell.position.x - characterPosition.x;
+      const dy = cell.position.y - characterPosition.y;
+
+      if (Math.abs(dx) + Math.abs(dy) !== 1) {
+        toast.error("You can only move to adjacent cells!");
+        return;
       }
-    );
-  };
 
-  const renderNode = (node) => {
-    if (!node.revealed) return null;
+      try {
+        setIsMoving(true);
+        const response = await matchService.moveCharacter(
+          currentCharacter.id,
+          mapData.match._id,
+          cell.position
+        );
 
-    const nodeDisplay = getNodeDisplay(node.type || 'EMPTY');
-    const isCurrentPosition = characterPosition && 
-      node.position.x === characterPosition.x && 
-      node.position.y === characterPosition.y;
+        if (response.success) {
+          useMapStore.getState().setMapData({
+            ...mapData,
+            grid: response.payload.match.grid,
+            match: {
+              ...response.payload.match,
+              characterPositions: response.payload.match.characterPositions,
+            },
+          });
 
-    return (
-      <motion.div
-        key={`node-${node.position.x}-${node.position.y}`}
-        className={`absolute w-[7rem] h-[7rem] -ml-2 -mt-2
-          ${node.completed ? 'bg-[#1A1A1A] text-gray-500' : 'bg-[#2A2A2A] text-white'}
-          rounded-lg shadow-lg 
-          ${isCurrentPosition ? 'border-blue-600 border-2' : 
-            !node.completed ? 'border border-white/20' : 'border-none'}
-          flex items-center justify-center cursor-pointer
-          hover:bg-[#353535] transition-all duration-200`}
-        style={{
-          left: `${node.position.x * 6}rem`,
-          top: `${node.position.y * 6}rem`,
-          zIndex: 10,
-        }}
-        onClick={() => handleCellClick(node)}
-        onMouseEnter={() => setHoveredNode(node)}
-        onMouseLeave={() => setHoveredNode(null)}
-      >
-        <div className="relative w-full h-full flex items-center justify-center text-5xl">
-          {nodeDisplay.icon}
-        </div>
-      </motion.div>
-    );
-  };
+          if (response.payload.event) {
+            setEventMessage({
+              ...response.payload.event,
+              position: cell.position,
+            });
+            setTimeout(() => setEventMessage(null), 3000);
+          }
+        }
+      } catch (error) {
+        console.error("Move error:", error);
+        toast.error(error.message || "Failed to move");
+      } finally {
+        setIsMoving(false);
+      }
+    },
+    [characterPosition, isMoving, currentCharacter?.id, mapData]
+  );
 
-  const renderPath = (path) => {
-    if (!path.revealed) return null;
+  const moveToAdjacentCell = useCallback(
+    async (direction) => {
+      if (!characterPosition || isMoving || !mapData?.match?._id) return;
 
-    const pathDisplay = getNodeDisplay(path.type || 'EMPTY');
-    const isCurrentPosition = characterPosition && 
-      path.position.x === characterPosition.x && 
-      path.position.y === characterPosition.y;
+      const newPosition = { ...characterPosition };
+      switch (direction) {
+        case "up":
+          newPosition.y -= 1;
+          break;
+        case "down":
+          newPosition.y += 1;
+          break;
+        case "left":
+          newPosition.x -= 1;
+          break;
+        case "right":
+          newPosition.x += 1;
+          break;
+        default:
+          return;
+      }
 
-    return (
-      <motion.div
-        key={`path-${path.position.x}-${path.position.y}`}
-        className={`absolute w-[6rem] h-[6rem]
-          ${path.completed ? 'bg-[#151515] text-gray-500' : 'bg-[#1A1A1A] text-white'}
-          ${isCurrentPosition ? 'border-blue-600 border-2' : 
-            !path.completed ? 'border border-white/20' : 'border-none'}
-          flex items-center justify-center cursor-pointer
-          hover:bg-[#252525] transition-all duration-200`}
-        style={{
-          left: `${path.position.x * 6}rem`,
-          top: `${path.position.y * 6}rem`,
-          zIndex: 5,
-        }}
-        onClick={() => handleCellClick(path)}
-        onMouseEnter={() => setHoveredNode(path)}
-        onMouseLeave={() => setHoveredNode(null)}
-      >
-        {pathDisplay.icon}
-      </motion.div>
-    );
-  };
+      const targetCell =
+        Object.values(gridNodes).find(
+          (node) =>
+            node.position.x === newPosition.x &&
+            node.position.y === newPosition.y &&
+            node.revealed
+        ) ||
+        Object.values(gridPaths).find(
+          (path) =>
+            path.position.x === newPosition.x &&
+            path.position.y === newPosition.y &&
+            path.revealed
+        );
 
-  // Render character separately to appear on both nodes and paths
-  const renderCharacter = () => {
-    if (!characterPosition) return null;
+      if (targetCell) {
+        await handleCellClick(targetCell);
+      }
+    },
+    [characterPosition, isMoving, mapData, gridNodes, gridPaths, handleCellClick]
+  );
 
-    return (
-      <motion.div
-        className="absolute flex items-center justify-center"
-        style={{
-          left: `${characterPosition.x * 6}rem`,
-          top: `${characterPosition.y * 6}rem`,
-          width: '6rem',
-          height: '6rem',
-          zIndex: 20,
-        }}
-      >
-        <CharacterSprite
-          characterId={currentCharacter.class}
-          action={isMoving ? "walk" : "idle"}
-          size="5rem"
-          colorMap={getColorMap()}
-        />
-      </motion.div>
-    );
-  };
+  // Add keyboard controls
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      switch (e.key.toLowerCase()) {
+        case "w":
+        case "arrowup":
+          moveToAdjacentCell("up");
+          break;
+        case "s":
+        case "arrowdown":
+          moveToAdjacentCell("down");
+          break;
+        case "a":
+        case "arrowleft":
+          moveToAdjacentCell("left");
+          break;
+        case "d":
+        case "arrowright":
+          moveToAdjacentCell("right");
+          break;
+      }
+    };
 
-  // Update the arrow controls render
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [moveToAdjacentCell]);
+
+  // Add zoom and pan functionality
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e) => {
+      e.preventDefault();
+      const zoomFactor = 0.05; // Reduced from 0.1 for smoother zoom
+      const direction = e.deltaY > 0 ? -1 : 1;
+
+      // Get mouse position relative to container
+      const rect = container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      // Calculate new scale with smooth transition
+      const newScale = Math.min(
+        Math.max(scale * (1 + direction * zoomFactor), MIN_SCALE),
+        MAX_SCALE
+      );
+
+      // Calculate how much the content will change in size
+      const scaleDiff = newScale - scale;
+
+      // Adjust position to zoom towards cursor with smooth transition
+      setPosition((prev) => ({
+        x: prev.x - (mouseX - prev.x) * (scaleDiff / scale),
+        y: prev.y - (mouseY - prev.y) * (scaleDiff / scale),
+      }));
+
+      setScale(newScale);
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    return () => container.removeEventListener("wheel", handleWheel);
+  }, [scale]);
+
+  // Camera follow effect - only trigger when character position changes
+  useEffect(() => {
+    if (!characterPosition || isDragging) return;
+
+    // Check if character actually moved
+    const hasPositionChanged =
+      !lastCharacterPosition.current ||
+      lastCharacterPosition.current.x !== characterPosition.x ||
+      lastCharacterPosition.current.y !== characterPosition.y;
+
+    if (hasPositionChanged && containerRef.current) {
+      const container = containerRef.current;
+      const cellSize = 6; // size in rem
+      const remToPx = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      const cellSizePx = cellSize * remToPx;
+
+      // Calculate center position
+      const centerX = container.clientWidth / 2 - characterPosition.x * cellSizePx * scale;
+      const centerY = container.clientHeight / 2 - characterPosition.y * cellSizePx * scale;
+
+      // Update position directly instead of viewport center during movement
+      setPosition({ x: centerX, y: centerY });
+
+      // Update last known position
+      lastCharacterPosition.current = characterPosition;
+    }
+  }, [characterPosition, scale]);
+
+  // Handle dragging with proper event handling
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleMouseMove = (e) => {
+      if (isDragging) {
+        const deltaX = e.clientX - dragStart.x;
+        const deltaY = e.clientY - dragStart.y;
+
+        setPosition((prev) => ({
+          x: prev.x + deltaX,
+          y: prev.y + deltaY,
+        }));
+
+        setDragStart({
+          x: e.clientX,
+          y: e.clientY,
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    const handleMouseDown = (e) => {
+      if (e.button === 0) {
+        e.preventDefault();
+        setIsDragging(true);
+        setDragStart({
+          x: e.clientX,
+          y: e.clientY,
+        });
+      }
+    };
+
+    container.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("mouseleave", handleMouseUp);
+
+    return () => {
+      container.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("mouseleave", handleMouseUp);
+    };
+  }, [isDragging, dragStart]);
+
   const renderArrowControls = () => (
     <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 grid grid-cols-3 gap-2">
       <div className="col-start-2">
         <button
-          onClick={() => moveToAdjacentCell('up')}
-          className="w-12 h-12 bg-black/80 rounded-lg flex items-center justify-center hover:bg-black/90 transition-colors"
+          onClick={() => moveToAdjacentCell("up")}
+          className="w-12 h-12 bg-gray-800/80 rounded-lg flex items-center justify-center hover:bg-gray-700/90 transition-colors"
         >
           <FaArrowUp className="text-white text-2xl" />
         </button>
       </div>
       <div className="col-start-1">
         <button
-          onClick={() => moveToAdjacentCell('left')}
-          className="w-12 h-12 bg-black/80 rounded-lg flex items-center justify-center hover:bg-black/90 transition-colors"
+          onClick={() => moveToAdjacentCell("left")}
+          className="w-12 h-12 bg-gray-800/80 rounded-lg flex items-center justify-center hover:bg-gray-700/90 transition-colors"
         >
           <FaArrowLeft className="text-white text-2xl" />
         </button>
       </div>
       <div className="col-start-2">
         <button
-          onClick={() => moveToAdjacentCell('down')}
-          className="w-12 h-12 bg-black/80 rounded-lg flex items-center justify-center hover:bg-black/90 transition-colors"
+          onClick={() => moveToAdjacentCell("down")}
+          className="w-12 h-12 bg-gray-800/80 rounded-lg flex items-center justify-center hover:bg-gray-700/90 transition-colors"
         >
           <FaArrowDown className="text-white text-2xl" />
         </button>
       </div>
       <div className="col-start-3">
         <button
-          onClick={() => moveToAdjacentCell('right')}
-          className="w-12 h-12 bg-black/80 rounded-lg flex items-center justify-center hover:bg-black/90 transition-colors"
+          onClick={() => moveToAdjacentCell("right")}
+          className="w-12 h-12 bg-gray-800/80 rounded-lg flex items-center justify-center hover:bg-gray-700/90 transition-colors"
         >
           <FaArrowRight className="text-white text-2xl" />
         </button>
@@ -500,9 +415,21 @@ export default function MapView() {
     </div>
   );
 
+  const isCurrentPosition = useCallback(
+    (pos) => {
+      return (
+        characterPosition && pos.x === characterPosition.x && pos.y === characterPosition.y
+      );
+    },
+    [characterPosition]
+  );
+
   return (
     <div className="w-[98.5vw] h-[80vh] mb-8 bg-[#121212] bg-opacity-80 overflow-hidden relative rounded-lg">
-      <div ref={containerRef} className="absolute inset-0 overflow-hidden">
+      <div
+        ref={containerRef}
+        className="absolute inset-0 overflow-hidden cursor-grab active:cursor-grabbing"
+      >
         <motion.div
           className="absolute origin-center"
           style={{
@@ -511,20 +438,46 @@ export default function MapView() {
             y: position.y,
           }}
           animate={{
-            x: viewportCenter.x,
-            y: viewportCenter.y,
-            transition: { type: "spring", stiffness: 100, damping: 20 }
+            x: position.x,
+            y: position.y,
+            scale,
+            transition: {
+              type: "tween",
+              duration: 0.01,
+              ease: "linear",
+            },
           }}
         >
           <div className="relative">
-            {mapData?.grid?.paths?.map(renderPath)}
-            {mapData?.grid?.nodes?.map(renderNode)}
-            {renderCharacter()}
+            {Object.values(gridPaths).map((path) => (
+              <GridPath
+                key={`${path.position.x},${path.position.y}`}
+                path={path}
+                onCellClick={handleCellClick}
+                isCurrentPosition={isCurrentPosition(path.position)}
+                onHover={setHoveredNode}
+              />
+            ))}
+            {Object.values(gridNodes).map((node) => (
+              <GridNode
+                key={`${node.position.x},${node.position.y}`}
+                node={node}
+                onCellClick={handleCellClick}
+                isCurrentPosition={isCurrentPosition(node.position)}
+                onHover={setHoveredNode}
+              />
+            ))}
+            {characterPosition && (
+              <Character
+                position={characterPosition}
+                character={currentCharacter}
+                isMoving={isMoving}
+              />
+            )}
           </div>
         </motion.div>
       </div>
 
-      {/* Event Message at the top */}
       <AnimatePresence>
         {eventMessage && (
           <motion.div
