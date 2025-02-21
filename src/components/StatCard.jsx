@@ -1,4 +1,4 @@
-import CharacterSprite from "./CharacterSprite";
+import CharacterSprite from "./CharacterSprite.jsx";
 
 export default function StatCard({ player, isEnemy = false }) {
   const accentColor = isEnemy ? "red" : "emerald";
@@ -17,7 +17,7 @@ export default function StatCard({ player, isEnemy = false }) {
             <div className={`scale-150 origin-center ${isEnemy ? 'scale-x-[-1.5]' : ''}`}>
               <CharacterSprite
                 character={player.character}
-                size="6rem"
+                size="1rem"
                 scale={1.5}
               />
             </div>

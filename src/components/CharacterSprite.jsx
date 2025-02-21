@@ -13,7 +13,8 @@ export default function CharacterSprite({
   scale = 1, 
   colorMap = {},
   isDisabled = false,
-  shadow = 1  // New prop: 0 = no shadow, 1 = large shadow, 2 = small shadow
+  shadow = 1,  
+  noOutline = false  // New prop to control outline version
 }) {
   const [currentFrame, setCurrentFrame] = useState(0);
   const animationRef = useRef(null);
@@ -50,7 +51,11 @@ export default function CharacterSprite({
     img.onerror = () => {
       setDebug(prev => ({ ...prev, loading: false, error: 'Failed to load spritesheet' }));
     };
-    img.src = character.spritesheet.path;
+
+    // Use the no-outline version if specified
+    const spritePath = character.spritesheet.path;
+    const noOutlinePath = spritePath.replace('.png', 'NoOut.png');
+    img.src = noOutline ? noOutlinePath : spritePath;
   };
 
   const applyColorMap = (image, hexColorMap) => {

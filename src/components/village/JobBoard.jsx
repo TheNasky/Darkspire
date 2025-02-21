@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useCharacterStore from "../../store/characterStore";
 import { contractService } from "../../services/contractService";
+import useGameStore from "../../store/gameStore.js"
+import { matchService } from "../../services/matchService";
+
 const BIOMES = {
   FOREST: {
     id: "forest",
@@ -401,6 +404,41 @@ export default function JobBoard() {
     fetchContracts();
   }, [currentCharacter?.id]);
 
+  const handleAcceptContract = async (difficulty) => {
+    try {
+      const response = await matchService.acceptContract(
+        currentCharacter.id,
+        selectedContract._id,
+        difficulty.toUpperCase()
+      );
+
+      if (response.success) {
+        const game = useGameStore.getState().game;
+        if (game) {
+          // Create the stage data with the complete match object
+          const stageData = {
+            contract: selectedContract,
+            difficulty,
+            mapData: {
+              grid: response.payload.match.grid,
+              match: response.payload.match
+            }
+          };
+
+          useGameStore.getState().setCurrentStage(stageData);
+          
+          game.events.emit('changeScene', 'StageBackground', { 
+            biome: selectedContract.biome?.toUpperCase() || 'FOREST',
+            stage: stageData
+          });
+        }
+        setSelectedContract(null);
+      }
+    } catch (error) {
+      console.error("Error accepting contract:", error);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col p-6 bg-[#2A160C]/5">
       <div className="flex gap-6 mb-6">
@@ -467,13 +505,7 @@ export default function JobBoard() {
                       )
                     }
                     onAccept={(difficulty) => {
-                      console.log(
-                        "Accepted contract:",
-                        contract._id,
-                        "with difficulty:",
-                        difficulty
-                      );
-                      setSelectedContract(null);
+                      handleAcceptContract(difficulty);
                     }}
                   />
                 ))}
