@@ -324,8 +324,6 @@ export default function MainMenu() {
                           autoComplete="new-password"
                           spellCheck="false"
                           onChange={handleInputChange}
-                          readOnly
-                          onKeyPress={(e) => e.target.removeAttribute("readonly")}
                           className="w-full px-4 py-3 rounded-lg bg-[#f3eade] order-[#2A160C]/20 focus:border-[#2A160C]/40 focus:outline-none
                                     transition-all duration-200 text-[#2A160C] placeholder-[#bf9879] shadow-inner"
                         />
